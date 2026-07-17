@@ -128,7 +128,7 @@ export default function Home() {
  <h1 className="text-[48px] leading-[56px] tracking-[-0.02em] font-[700] text-on-surface">
  Land more interviews, with <span className="text-primary">less effort</span>.
  </h1>
- <p className="text-[18px] leading-[28px] font-[400] text-on-surface-variant max-w-lg">
+ <p className="text-[18px] leading-[28px] font-[400] text-on-surface-variant max-w-[512px]">
  AI-tailored resumes, cover letters, and mock interviews to help you land your dream job faster. Stop guessing and start applying with precision.
  </p>
  <div className="flex flex-wrap gap-[16px] mt-[8px]">
@@ -187,7 +187,7 @@ export default function Home() {
 
  {/* How it Works */}
  <section className="animate-on-scroll opacity-0 translate-y-8 transition-all duration-700 ease-out py-[64px] px-[16px] md:px-[40px] max-w-[1280px] mx-auto" id="how-it-works">
- <div className="text-center max-w-2xl mx-auto mb-[48px]">
+ <div className="text-center max-w-[672px] mx-auto mb-[48px]">
  <h2 className="text-[36px] leading-[44px] tracking-[-0.02em] font-[700] text-on-surface mb-[8px]">Your fast track to the interview</h2>
  <p className="text-[18px] leading-[28px] font-[400] text-on-surface-variant">Applica streamlines the entire application process in four simple steps.</p>
  </div>
@@ -238,7 +238,7 @@ export default function Home() {
  </section>
  {/* Features (Bento Grid) */}
  <section className="animate-on-scroll opacity-0 translate-y-8 transition-all duration-700 ease-out py-[64px] px-[16px] md:px-[40px] max-w-[1280px] mx-auto bg-surface-container-low rounded-3xl mb-[48px]" id="features">
- <div className="text-center max-w-2xl mx-auto mb-[48px]">
+ <div className="text-center max-w-[672px] mx-auto mb-[48px]">
  <h2 className="text-[36px] leading-[44px] tracking-[-0.02em] font-[700] text-on-surface mb-[8px]">Tools to elevate your application</h2>
  <p className="text-[18px] leading-[28px] font-[400] text-on-surface-variant">Everything you need to stand out in a crowded job market, powered by advanced AI.</p>
  </div>
@@ -250,7 +250,7 @@ export default function Home() {
  <span className="material-symbols-outlined text-primary">document_scanner</span>
  </div>
  <h3 className="text-[20px] leading-[28px] font-[600] text-on-surface mb-[8px]">AI Resume Optimization</h3>
- <p className="text-on-surface-variant max-w-md">Our engine aligns your experience with the job description, injecting optimal keywords and restructuring for maximum impact.</p>
+ <p className="text-on-surface-variant max-w-[448px]">Our engine aligns your experience with the job description, injecting optimal keywords and restructuring for maximum impact.</p>
  </div>
  <div className="absolute bottom-0 right-0 w-2/3 h-1/2 opacity-20 group-hover:opacity-40 transition-opacity duration-300 pointer-events-none">
  <div className="w-full h-full bg-gradient-to-tl from-primary to-transparent rounded-tl-full blur-2xl"></div>
@@ -301,11 +301,11 @@ export default function Home() {
  </section>
  {/* Pricing Section */}
  <section className="animate-on-scroll opacity-0 translate-y-8 transition-all duration-700 ease-out py-[64px] px-[16px] md:px-[40px] max-w-[1280px] mx-auto" id="pricing">
- <div className="text-center max-w-2xl mx-auto mb-[48px]">
+ <div className="text-center max-w-[672px] mx-auto mb-[48px]">
  <h2 className="text-[36px] leading-[44px] tracking-[-0.02em] font-[700] text-on-surface mb-[8px]">Simple, transparent pricing</h2>
  <p className="text-[18px] leading-[28px] font-[400] text-on-surface-variant">Invest in your career with a plan that fits your job search velocity.</p>
  </div>
- <div className="grid grid-cols-1 md:grid-cols-2 gap-[24px] max-w-4xl mx-auto">
+ <div className="grid grid-cols-1 md:grid-cols-2 gap-[24px] max-w-[896px] mx-auto">
  {/* Free Tier */}
  <div className="bg-surface-container-lowest rounded-xl p-[32px] shadow-[0_2px_4px_rgb(0,0,0,0.04)] border border-outline-variant/30 flex flex-col">
  <div className="mb-[24px]">
@@ -383,7 +383,7 @@ export default function Home() {
  {/* abstract graphic */}
  <div className="absolute right-0 top-0 w-64 h-64 bg-primary-container rounded-full blur-3xl opacity-50 transform translate-x-1/2 -translate-y-1/2"></div>
  <div className="absolute left-0 bottom-0 w-48 h-48 bg-secondary-container rounded-full blur-2xl opacity-20 transform -translate-x-1/4 translate-y-1/4"></div>
- <div className="relative z-10 max-w-xl text-center md:text-left">
+ <div className="relative z-10 max-w-[576px] text-center md:text-left">
  <h2 className="text-[36px] leading-[44px] tracking-[-0.02em] font-[700] text-on-primary mb-[8px]">Ready to land that dream job?</h2>
  <p className="text-[18px] leading-[28px] font-[400] text-primary-fixed-dim">Join thousands of job seekers who are getting more interviews with less stress.</p>
  </div>

@@ -8,6 +8,7 @@ function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get("token");
+  const key = searchParams.get("key");
   const [status, setStatus] = useState<"pending" | "success" | "error">("pending");
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -21,16 +22,24 @@ function VerifyEmailContent() {
 
     let isMounted = true;
 
+    const endpoint = key === "email_change" 
+      ? "v1/auth/email/change/confirm/" 
+      : "v1/auth/email/verify/";
+      
+    const redirectUrl = key === "email_change"
+      ? "/dashboard/settings"
+      : "/login";
+
     // Call the verification API
     import("@/lib/axios").then(({ default: api }) => {
-      api.post("v1/auth/email/verify/", { token })
+      api.post(endpoint, { token })
         .then(() => {
           if (!isMounted) return;
           setStatus("success");
           
-          // Auto-redirect to login after showing success for a short period
+          // Auto-redirect after showing success for a short period
           setTimeout(() => {
-            if (isMounted) router.push("/login");
+            if (isMounted) router.push(redirectUrl);
           }, 2000);
         })
         .catch((err) => {
@@ -45,7 +54,7 @@ function VerifyEmailContent() {
     return () => {
       isMounted = false;
     };
-  }, [token, router]);
+  }, [token, key, router]);
 
   return (
     <div className="landing-page-theme bg-background font-sans text-on-background min-h-screen flex flex-col items-center justify-center antialiased p-[16px] md:p-[40px]">
@@ -89,7 +98,7 @@ function VerifyEmailContent() {
             </div>
             <h1 className="text-[20px] leading-[28px] font-[600] mb-[8px] text-on-surface">Email Verified!</h1>
             <p className="text-[16px] leading-[24px] font-[400] text-on-surface-variant">
-              Redirecting to login...
+              {key === "email_change" ? "Redirecting to settings..." : "Redirecting to login..."}
             </p>
           </div>
         )}

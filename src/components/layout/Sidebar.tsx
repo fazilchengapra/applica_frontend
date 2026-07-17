@@ -2,12 +2,30 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSidebar } from "./SidebarProvider";
+import { useAppDispatch } from "@/store";
+import { clearUser } from "@/store/slices/authSlice";
+import api from "@/lib/axios";
 
 export default function Sidebar() {
   const { isOpen, closeSidebar } = useSidebar();
   const pathname = usePathname();
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+
+  const handleLogout = async () => {
+    try {
+      // Hit the backend to clear HTTP-only cookies
+      await api.post("v1/auth/logout/");
+    } catch (error) {
+      console.error("Logout failed on server", error);
+    } finally {
+      // Always clear client state and redirect, even if server request fails
+      dispatch(clearUser());
+      router.push("/login");
+    }
+  };
 
   return (
     <>
@@ -99,7 +117,10 @@ export default function Sidebar() {
             <span className="font-label-caps text-label-caps">Settings</span>
           </Link>
           {/* Logout */}
-          <button className="flex items-center gap-3 px-4 py-3 text-secondary transition-transform duration-200 hover:text-primary hover:translate-x-1 w-full text-left cursor-pointer">
+          <button 
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-4 py-3 text-secondary transition-transform duration-200 hover:text-primary hover:translate-x-1 w-full text-left cursor-pointer"
+          >
             <span className="material-symbols-outlined" data-icon="logout">
               logout
             </span>

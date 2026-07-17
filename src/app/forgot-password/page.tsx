@@ -3,29 +3,49 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
+import { AxiosError } from "axios";
+import api from "@/lib/axios";
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email("Please enter a valid email address."),
+});
+
+type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 
 export default function ForgotPasswordPage() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [email, setEmail] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setError,
+  } = useForm<ForgotPasswordFormValues>({
+    resolver: zodResolver(forgotPasswordSchema),
+  });
 
-    setIsSubmitting(true);
-    
-    // Simulate network request
-    setTimeout(() => {
-      setIsSubmitting(false);
+  const mutation = useMutation({
+    mutationFn: async (data: ForgotPasswordFormValues) => {
+      const response = await api.post("v1/auth/password/forgot/", data);
+      return response.data;
+    },
+    onSuccess: (data) => {
       setIsSuccess(true);
-      
-      // Reset state after 3 seconds for demo purposes
-      setTimeout(() => {
-        setIsSuccess(false);
-        setEmail("");
-      }, 3000);
-    }, 1500);
+      setSuccessMessage(data.message || "If an account with that email exists, a reset link has been sent.");
+    },
+    onError: (error: AxiosError<{ detail?: string }>) => {
+      const message = error.response?.data?.detail || "An unexpected error occurred.";
+      setError("root", { type: "server", message });
+    }
+  });
+
+  const onSubmit = (data: ForgotPasswordFormValues) => {
+    mutation.mutate(data);
   };
 
   return (
@@ -59,58 +79,65 @@ export default function ForgotPasswordPage() {
 
         {/* Form Container */}
         <div className="relative w-full">
-          <form className="flex flex-col gap-[24px] w-full" onSubmit={handleSubmit}>
-            {/* Email Input */}
-            <div className="flex flex-col gap-[8px]">
-              <label className="text-[14px] leading-[20px] tracking-[0.01em] font-[500] text-on-surface" htmlFor="email">
-                Email Address
-              </label>
-              <div className="relative">
-                <span className="material-symbols-outlined absolute left-[16px] top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">mail</span>
-                <input 
-                  className="w-full pl-[48px] pr-[16px] py-[8px] h-[44px] bg-surface-container-lowest border border-outline-variant rounded-lg text-[16px] leading-[24px] font-[400] text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline" 
-                  id="email" 
-                  type="email" 
-                  placeholder="you@example.com" 
-                  required 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={isSubmitting || isSuccess} 
-                />
-              </div>
+          {isSuccess ? (
+            <div className="flex flex-col items-center text-center bg-[#006e73]/10 text-[#006e73] p-6 rounded-lg border border-[#006e73]/20 shadow-sm animate-in fade-in zoom-in duration-300">
+              <span className="material-symbols-outlined text-[48px] mb-4">mark_email_read</span>
+              <h3 className="font-title-lg text-title-lg font-bold mb-2">Check Your Email</h3>
+              <p className="font-body-md text-body-md text-secondary/90">{successMessage}</p>
             </div>
-
-            {/* Submit Button */}
-            <button 
-              className={`w-full h-[44px] text-on-primary text-[14px] leading-[20px] tracking-[0.01em] font-[500] rounded-lg flex items-center justify-center gap-[8px] transition-all shadow-[0_2px_4px_rgba(0,0,0,0.04)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface-container-lowest ${
-                isSuccess 
-                  ? 'bg-secondary hover:bg-secondary' 
-                  : 'bg-primary hover:bg-primary-container focus:ring-primary'
-              } ${
-                isSubmitting 
-                  ? 'opacity-75 cursor-not-allowed hover:-translate-y-0' 
-                  : 'hover:-translate-y-[1px] hover:shadow-[0_4px_8px_rgba(0,0,0,0.08)]'
-              }`} 
-              type="submit"
-              disabled={isSubmitting || isSuccess}
-            >
-              {isSubmitting ? (
-                <>
-                  <span className="material-symbols-outlined text-[20px] animate-spin">progress_activity</span>
-                  Sending...
-                </>
-              ) : isSuccess ? (
-                <>
-                  <span className="material-symbols-outlined text-[20px]">check</span>
-                  Link Sent
-                </>
-              ) : (
-                <>
-                  Send Reset Link
-                </>
+          ) : (
+            <form className="flex flex-col gap-[24px] w-full" onSubmit={handleSubmit(onSubmit)}>
+              {errors.root && (
+                <div className="p-3 bg-error-container text-on-error-container rounded-lg text-sm font-medium">
+                  {errors.root.message}
+                </div>
               )}
-            </button>
-          </form>
+              
+              {/* Email Input */}
+              <div className="flex flex-col gap-[8px]">
+                <label className="text-[14px] leading-[20px] tracking-[0.01em] font-[500] text-on-surface" htmlFor="email">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <span className="material-symbols-outlined absolute left-[16px] top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">mail</span>
+                  <input 
+                    {...register("email")}
+                    className={`w-full pl-[48px] pr-[16px] py-[8px] h-[44px] bg-surface-container-lowest border rounded-lg text-[16px] leading-[24px] font-[400] text-on-surface focus:outline-none focus:ring-2 transition-all placeholder:text-outline ${
+                      errors.email 
+                        ? 'border-error focus:border-error focus:ring-error/20' 
+                        : 'border-outline-variant focus:border-primary focus:ring-primary/20'
+                    }`} 
+                    id="email" 
+                    type="email" 
+                    placeholder="you@example.com" 
+                    disabled={mutation.isPending} 
+                  />
+                </div>
+                {errors.email && (
+                  <span className="text-[12px] text-error flex items-center gap-1 mt-1">
+                    <span className="material-symbols-outlined text-[14px]">error</span>
+                    {errors.email.message}
+                  </span>
+                )}
+              </div>
+
+              {/* Submit Button */}
+              <button 
+                className={`w-full h-[44px] text-[14px] leading-[20px] tracking-[0.01em] font-[500] rounded-lg flex items-center justify-center gap-[8px] transition-all shadow-[0_2px_4px_rgba(0,0,0,0.04)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface-container-lowest ${
+                  mutation.isPending 
+                    ? 'bg-primary/80 text-on-primary cursor-wait' 
+                    : 'bg-primary text-on-primary hover:bg-primary-container focus:ring-primary hover:-translate-y-[1px] hover:shadow-[0_4px_8px_rgba(0,0,0,0.08)] cursor-pointer'
+                }`} 
+                type="submit"
+                disabled={mutation.isPending}
+              >
+                {mutation.isPending && (
+                  <span className="material-symbols-outlined text-[20px] animate-spin">progress_activity</span>
+                )}
+                {mutation.isPending ? 'Sending...' : 'Send Reset Link'}
+              </button>
+            </form>
+          )}
         </div>
 
         {/* Back to Login */}

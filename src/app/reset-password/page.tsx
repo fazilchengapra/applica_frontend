@@ -4,36 +4,63 @@ import { useState, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
+import { AxiosError } from "axios";
+import api from "@/lib/axios";
+
+const resetPasswordSchema = z.object({
+  new_password: z.string().min(8, "Must be at least 8 characters long."),
+  confirm_password: z.string().min(1, "Please confirm your new password."),
+}).refine((data) => data.new_password === data.confirm_password, {
+  message: "Passwords don't match.",
+  path: ["confirm_password"],
+});
+
+type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 
 function ResetPasswordContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!password || !confirmPassword || password !== confirmPassword) return;
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setError,
+  } = useForm<ResetPasswordFormValues>({
+    resolver: zodResolver(resetPasswordSchema),
+  });
 
-    setIsSubmitting(true);
-    
-    // Simulate network request using token
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setIsSuccess(true);
-      
-      // Redirect to login after success
+  const mutation = useMutation({
+    mutationFn: async (data: ResetPasswordFormValues) => {
+      const payload = {
+        token,
+        new_password: data.new_password,
+        confirm_password: data.confirm_password
+      };
+      const response = await api.post("v1/auth/password/reset/", payload);
+      return response.data;
+    },
+    onSuccess: () => {
       setTimeout(() => {
         router.push("/login");
       }, 2000);
-    }, 1500);
+    },
+    onError: (error: AxiosError<{ detail?: string }>) => {
+      const message = error.response?.data?.detail || "An unexpected error occurred.";
+      setError("root", { type: "server", message });
+    }
+  });
+
+  const onSubmit = (data: ResetPasswordFormValues) => {
+    mutation.mutate(data);
   };
 
   return (
@@ -74,17 +101,40 @@ function ResetPasswordContent() {
                <Link href="/forgot-password" className="text-primary hover:underline font-[600]">Request a new link</Link>
              </div>
           ) : (
-            <form className="flex flex-col gap-[24px] w-full" onSubmit={handleSubmit}>
+            <form className="flex flex-col gap-[24px] w-full" onSubmit={handleSubmit(onSubmit)}>
+              {errors.root && (
+                <div className="p-3 bg-error-container text-on-error-container rounded-lg text-sm font-medium">
+                  {errors.root.message}
+                </div>
+              )}
+
               {/* New Password */}
               <div className="flex flex-col gap-[8px]">
                 <label className="text-[14px] leading-[20px] tracking-[0.01em] font-[500] text-on-surface" htmlFor="new-password">New Password</label>
                 <div className="relative">
                   <span className="material-symbols-outlined absolute left-[16px] top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">lock</span>
-                  <input className="w-full bg-surface-container-lowest border border-outline-variant text-on-surface text-[16px] leading-[24px] font-[400] rounded-lg pl-[48px] pr-[40px] py-[8px] focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all placeholder:text-outline h-[44px]" id="new-password" name="new-password" placeholder="••••••••" required type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} disabled={isSubmitting || isSuccess} />
-                  <button className="absolute inset-y-0 right-0 px-[8px] flex items-center text-outline hover:text-on-surface transition-colors focus:outline-none" onClick={() => setShowPassword(!showPassword)} type="button" disabled={isSubmitting || isSuccess}>
+                  <input 
+                    {...register("new_password")}
+                    className={`w-full bg-surface-container-lowest border text-on-surface text-[16px] leading-[24px] font-[400] rounded-lg pl-[48px] pr-[40px] py-[8px] focus:outline-none focus:ring-2 transition-all placeholder:text-outline h-[44px] ${
+                      errors.new_password 
+                        ? 'border-error focus:border-error focus:ring-error/20' 
+                        : 'border-outline-variant focus:border-primary focus:ring-primary/20'
+                    }`} 
+                    id="new-password" 
+                    placeholder="••••••••" 
+                    type={showPassword ? "text" : "password"} 
+                    disabled={mutation.isPending || mutation.isSuccess} 
+                  />
+                  <button className="absolute inset-y-0 right-0 px-[8px] flex items-center text-outline hover:text-on-surface transition-colors focus:outline-none cursor-pointer" onClick={() => setShowPassword(!showPassword)} type="button" disabled={mutation.isPending || mutation.isSuccess}>
                     <span className="material-symbols-outlined text-[20px]">{showPassword ? 'visibility_off' : 'visibility'}</span>
                   </button>
                 </div>
+                {errors.new_password && (
+                  <span className="text-[12px] text-error flex items-center gap-1 mt-1">
+                    <span className="material-symbols-outlined text-[14px]">error</span>
+                    {errors.new_password.message}
+                  </span>
+                )}
               </div>
               
               {/* Confirm Password */}
@@ -92,36 +142,48 @@ function ResetPasswordContent() {
                 <label className="text-[14px] leading-[20px] tracking-[0.01em] font-[500] text-on-surface" htmlFor="confirm-password">Confirm New Password</label>
                 <div className="relative">
                   <span className="material-symbols-outlined absolute left-[16px] top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">lock</span>
-                  <input className="w-full bg-surface-container-lowest border border-outline-variant text-on-surface text-[16px] leading-[24px] font-[400] rounded-lg pl-[48px] pr-[40px] py-[8px] focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all placeholder:text-outline h-[44px]" id="confirm-password" name="confirm-password" placeholder="••••••••" required type={showConfirmPassword ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} disabled={isSubmitting || isSuccess} />
-                  <button className="absolute inset-y-0 right-0 px-[8px] flex items-center text-outline hover:text-on-surface transition-colors focus:outline-none" onClick={() => setShowConfirmPassword(!showConfirmPassword)} type="button" disabled={isSubmitting || isSuccess}>
+                  <input 
+                    {...register("confirm_password")}
+                    className={`w-full bg-surface-container-lowest border text-on-surface text-[16px] leading-[24px] font-[400] rounded-lg pl-[48px] pr-[40px] py-[8px] focus:outline-none focus:ring-2 transition-all placeholder:text-outline h-[44px] ${
+                      errors.confirm_password 
+                        ? 'border-error focus:border-error focus:ring-error/20' 
+                        : 'border-outline-variant focus:border-primary focus:ring-primary/20'
+                    }`} 
+                    id="confirm-password" 
+                    placeholder="••••••••" 
+                    type={showConfirmPassword ? "text" : "password"} 
+                    disabled={mutation.isPending || mutation.isSuccess} 
+                  />
+                  <button className="absolute inset-y-0 right-0 px-[8px] flex items-center text-outline hover:text-on-surface transition-colors focus:outline-none cursor-pointer" onClick={() => setShowConfirmPassword(!showConfirmPassword)} type="button" disabled={mutation.isPending || mutation.isSuccess}>
                     <span className="material-symbols-outlined text-[20px]">{showConfirmPassword ? 'visibility_off' : 'visibility'}</span>
                   </button>
                 </div>
-                {password && confirmPassword && password !== confirmPassword && (
-                  <p className="text-error text-[12px] font-[500] mt-[4px]">Passwords do not match</p>
+                {errors.confirm_password && (
+                  <span className="text-[12px] text-error flex items-center gap-1 mt-1">
+                    <span className="material-symbols-outlined text-[14px]">error</span>
+                    {errors.confirm_password.message}
+                  </span>
                 )}
               </div>
               
               {/* Submit Button */}
               <button 
                 className={`w-full h-[44px] text-on-primary text-[14px] leading-[20px] tracking-[0.01em] font-[500] rounded-lg flex items-center justify-center gap-[8px] transition-all shadow-[0_2px_4px_rgba(0,0,0,0.04)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface-container-lowest mt-[8px] ${
-                  isSuccess 
-                    ? 'bg-secondary hover:bg-secondary' 
-                    : 'bg-primary hover:bg-primary-container focus:ring-primary'
+                  mutation.isSuccess 
+                    ? 'bg-secondary hover:bg-secondary cursor-default' 
+                    : 'bg-primary hover:bg-primary-container focus:ring-primary cursor-pointer hover:-translate-y-[1px] hover:shadow-[0_4px_8px_rgba(0,0,0,0.08)]'
                 } ${
-                  isSubmitting || (password && confirmPassword && password !== confirmPassword)
-                    ? 'opacity-75 cursor-not-allowed hover:-translate-y-0' 
-                    : 'hover:-translate-y-[1px] hover:shadow-[0_4px_8px_rgba(0,0,0,0.08)]'
+                  mutation.isPending ? 'opacity-75 cursor-wait hover:-translate-y-0' : ''
                 }`} 
                 type="submit"
-                disabled={isSubmitting || isSuccess || (password !== '' && confirmPassword !== '' && password !== confirmPassword)}
+                disabled={mutation.isPending || mutation.isSuccess}
               >
-                {isSubmitting ? (
+                {mutation.isPending ? (
                   <>
                     <span className="material-symbols-outlined text-[20px] animate-spin">progress_activity</span>
                     Resetting...
                   </>
-                ) : isSuccess ? (
+                ) : mutation.isSuccess ? (
                   <>
                     <span className="material-symbols-outlined text-[20px]">check</span>
                     Password Reset!

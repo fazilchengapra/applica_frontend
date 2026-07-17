@@ -6,35 +6,39 @@ import EmailChangeModal from "@/components/settings/EmailChangeModal";
 import PhoneChangeModal from "@/components/settings/PhoneChangeModal";
 import PhoneVerifyModal from "@/components/settings/PhoneVerifyModal";
 import ChangePasswordModal from "@/components/settings/ChangePasswordModal";
+import { useAppSelector } from "@/store";
 
 export default function SettingsPage() {
+  const user = useAppSelector((state) => state.auth.user);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false);
   const [isPhoneVerifyModalOpen, setIsPhoneVerifyModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [pendingNewPhone, setPendingNewPhone] = useState("");
 
-  const handlePhoneVerifyClick = () => {
+  const handlePhoneVerifyClick = (newPhone: string) => {
+    setPendingNewPhone(newPhone);
     setIsPhoneModalOpen(false);
     setIsPhoneVerifyModalOpen(true);
   };
 
   return (
-    <main className="flex-grow p-container-padding flex flex-col gap-stack-gap w-full">
+    <main className="flex-grow p-[16px] md:p-[24px] flex flex-col gap-[24px] w-full">
       <div className="max-w-4xl mx-auto w-full">
-        <h2 className="font-display-lg text-display-lg text-on-surface tracking-tight mb-8">
+        <h2 className="font-display-lg text-[32px] font-[700] text-on-surface tracking-tight mb-8">
           Account & Security
         </h2>
 
         <div className="bg-surface-container-lowest border border-surface-variant rounded-xl p-6 shadow-sm mb-8 flex flex-col">
           <SettingItem
             title="Email"
-            value="alex@example.com"
+            value={user?.email || "Not provided"}
             buttonText="Update"
             onClick={() => setIsEmailModalOpen(true)}
           />
           <SettingItem
             title="Phone Number"
-            value="+1 (555) 000-0000"
+            value={user?.phone_number || "Not provided"}
             buttonText="Update"
             onClick={() => setIsPhoneModalOpen(true)}
           />
@@ -64,7 +68,11 @@ export default function SettingsPage() {
       )}
 
       {isPhoneVerifyModalOpen && (
-        <PhoneVerifyModal onClose={() => setIsPhoneVerifyModalOpen(false)} />
+        <PhoneVerifyModal 
+          onClose={() => setIsPhoneVerifyModalOpen(false)} 
+          newPhone={pendingNewPhone}
+          currentPhone={user?.phone_number || ""}
+        />
       )}
 
       {isPasswordModalOpen && (
