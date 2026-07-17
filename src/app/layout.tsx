@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Hanken_Grotesk } from "next/font/google";
 import "./globals.css";
+import { QueryProvider } from "@/components/providers/QueryProvider";
+import ReduxProvider from "@/components/providers/ReduxProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,7 +40,11 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="bg-surface text-on-surface overflow-x-hidden min-h-full flex flex-col">{children}</body>
+      <body className="bg-surface text-on-surface overflow-x-hidden min-h-full flex flex-col">
+        <ReduxProvider>
+          <QueryProvider>{children}</QueryProvider>
+        </ReduxProvider>
+      </body>
     </html>
   );
 }
