@@ -1,10 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import api from "@/lib/axios";
 import ProfileSummary from "@/components/profile/ProfileSummary";
 import ProfileIntro from "@/components/profile/ProfileIntro";
 import ProfileAbout from "@/components/profile/ProfileAbout";
+import EditProfileModal from "@/components/profile/EditProfileModal";
 import { useAppSelector } from "@/store";
 
 interface UserProfileResponse {
@@ -27,6 +29,7 @@ interface UserProfileResponse {
 
 export default function ProfilePage() {
   const user = useAppSelector(state => state.auth.user);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const { data: profile, isLoading, isError } = useQuery<UserProfileResponse>({
     queryKey: ["profile"],
@@ -63,7 +66,10 @@ export default function ProfilePage() {
       <div className="max-w-7xl mx-auto w-full flex flex-col gap-[24px]">
         <div className="flex justify-between items-center w-full">
           <h2 className="font-display-lg text-[32px] font-[700] text-on-surface tracking-tight">My Profile</h2>
-          <button className="flex items-center gap-2 bg-primary text-on-primary px-4 py-2 rounded-lg text-[14px] font-[600] hover:bg-primary-container hover:shadow-md transition-all cursor-pointer">
+          <button 
+            onClick={() => setIsEditModalOpen(true)}
+            className="flex items-center gap-2 bg-primary text-on-primary px-4 py-2 rounded-lg text-[14px] font-[600] hover:bg-primary-container hover:shadow-md transition-all cursor-pointer"
+          >
             <span className="material-symbols-outlined text-[18px]">edit</span>
             Edit Profile
           </button>
@@ -87,6 +93,12 @@ export default function ProfilePage() {
         </div>
         <ProfileAbout bio={profile.bio} />
       </div>
+      
+      <EditProfileModal 
+        isOpen={isEditModalOpen} 
+        onClose={() => setIsEditModalOpen(false)} 
+        profile={profile} 
+      />
     </main>
   );
 }

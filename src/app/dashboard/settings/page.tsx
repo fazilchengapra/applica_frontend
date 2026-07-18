@@ -6,6 +6,7 @@ import EmailChangeModal from "@/components/settings/EmailChangeModal";
 import PhoneChangeModal from "@/components/settings/PhoneChangeModal";
 import PhoneVerifyModal from "@/components/settings/PhoneVerifyModal";
 import ChangePasswordModal from "@/components/settings/ChangePasswordModal";
+import DeleteAccountModal from "@/components/settings/DeleteAccountModal";
 import { useAppSelector } from "@/store";
 
 export default function SettingsPage() {
@@ -14,6 +15,7 @@ export default function SettingsPage() {
   const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false);
   const [isPhoneVerifyModalOpen, setIsPhoneVerifyModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [pendingNewPhone, setPendingNewPhone] = useState("");
 
   const handlePhoneVerifyClick = (newPhone: string) => {
@@ -49,27 +51,37 @@ export default function SettingsPage() {
           />
         </div>
 
-        <div className="flex justify-start pt-4">
-          <button className="px-6 py-2.5 bg-transparent text-error hover:bg-error-container hover:text-on-error-container font-title-sm text-title-sm rounded-lg transition-colors cursor-pointer border border-transparent hover:border-error/20">
+        <div className="bg-error-container/20 border border-error/20 p-6 rounded-lg shadow-[0_2px_4px_rgba(226,232,240,0.04)] mt-8">
+          <div className="flex items-center gap-4 mb-4">
+            <span className="material-symbols-outlined text-error">dangerous</span>
+            <h3 className="font-title-lg text-[20px] font-semibold text-on-error-container">Danger Zone</h3>
+          </div>
+          <p className="text-body-md text-on-error-container mb-8">
+            Permanently delete your account and all associated data. This action is irreversible.
+          </p>
+          <button 
+            onClick={() => setIsDeleteModalOpen(true)}
+            className="py-3 px-8 border-2 border-error text-error rounded-lg font-medium text-[14px] hover:bg-error hover:text-white transition-all"
+          >
             Delete Account
           </button>
         </div>
       </div>
-      
+
       {isEmailModalOpen && (
         <EmailChangeModal onClose={() => setIsEmailModalOpen(false)} />
       )}
 
       {isPhoneModalOpen && (
-        <PhoneChangeModal 
-          onClose={() => setIsPhoneModalOpen(false)} 
+        <PhoneChangeModal
+          onClose={() => setIsPhoneModalOpen(false)}
           onVerify={handlePhoneVerifyClick}
         />
       )}
 
       {isPhoneVerifyModalOpen && (
-        <PhoneVerifyModal 
-          onClose={() => setIsPhoneVerifyModalOpen(false)} 
+        <PhoneVerifyModal
+          onClose={() => setIsPhoneVerifyModalOpen(false)}
           newPhone={pendingNewPhone}
           currentPhone={user?.phone_number || ""}
         />
@@ -77,6 +89,10 @@ export default function SettingsPage() {
 
       {isPasswordModalOpen && (
         <ChangePasswordModal onClose={() => setIsPasswordModalOpen(false)} />
+      )}
+
+      {isDeleteModalOpen && (
+        <DeleteAccountModal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} />
       )}
     </main>
   );
