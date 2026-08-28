@@ -1,49 +1,46 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import api from "@/lib/axios";
 
-type CVStatus = "Ready" | "Processing" | "Failed";
+// ── API types ────────────────────────────────────────────────────────────────
 
-interface CV {
-  id: number;
-  name: string;
-  version: string;
-  uploadedDate: string;
-  status: CVStatus;
-  isMaster?: boolean;
-  fileType: "pdf" | "docx";
+interface MasterCVVersion {
+  id: string;
+  version: number;
+  master_cv_id: string;
+  target_role: string;
+  is_current: boolean;
+  s3_key: string;
+  status: "completed" | "processing" | "failed";
+  created_at: string;
 }
 
-const mockCVs: CV[] = [
-  {
-    id: 1,
-    name: "Fazil_Resume_Master.pdf",
-    version: "v3",
-    uploadedDate: "Oct 12, 2025",
-    status: "Ready",
-    isMaster: true,
-    fileType: "pdf",
-  },
-  {
-    id: 2,
-    name: "Marketing_Specialist_Draft.pdf",
-    version: "v2",
-    uploadedDate: "Oct 10, 2025",
-    status: "Processing",
-    fileType: "pdf",
-  },
-  {
-    id: 3,
-    name: "Old_Resume_2022.docx",
-    version: "v1",
-    uploadedDate: "Jan 15, 2022",
-    status: "Failed",
-    fileType: "docx",
-  },
-];
+interface CVStats {
+  total: number;
+  ready: number;
+  processing: number;
+  failed: number;
+}
 
-function StatusBadge({ status }: { status: CVStatus }) {
-  if (status === "Ready") {
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function fileTypeFromKey(s3Key: string): "pdf" | "docx" {
+  return s3Key.toLowerCase().endsWith(".docx") ? "docx" : "pdf";
+}
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+// ── Sub-components ───────────────────────────────────────────────────────────
+
+function StatusBadge({ status }: { status: MasterCVVersion["status"] }) {
+  if (status === "completed") {
     return (
       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-label-caps text-label-caps font-semibold border border-emerald-200">
         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
@@ -51,7 +48,7 @@ function StatusBadge({ status }: { status: CVStatus }) {
       </span>
     );
   }
-  if (status === "Processing") {
+  if (status === "processing") {
     return (
       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 font-label-caps text-label-caps font-semibold border border-amber-200">
         <span className="material-symbols-outlined text-[13px] animate-spin">
@@ -71,7 +68,17 @@ function StatusBadge({ status }: { status: CVStatus }) {
   );
 }
 
-function CVRow({ cv, onMenuClick }: { cv: CV; onMenuClick: (id: number) => void }) {
+function CVRow({
+  cv,
+  onMenuClick,
+}: {
+  cv: MasterCVVersion;
+  onMenuClick: (id: string) => void;
+}) {
+  const fileType = fileTypeFromKey(cv.s3_key);
+  // Derive a display name: use target_role + version
+  const displayName = `${cv.target_role} — v${cv.version}.${fileType}`;
+
   return (
     <tr className="group hover:bg-surface-container-low/50 transition-colors duration-150 border-b border-outline-variant/30 last:border-0">
       {/* Document Name */}
@@ -79,22 +86,22 @@ function CVRow({ cv, onMenuClick }: { cv: CV; onMenuClick: (id: number) => void 
         <div className="flex items-center gap-3">
           <div
             className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-150 ${
-              cv.fileType === "pdf"
+              fileType === "pdf"
                 ? "bg-primary/8 text-primary group-hover:bg-primary/14"
                 : "bg-tertiary/8 text-tertiary group-hover:bg-tertiary/14"
             }`}
           >
             <span className="material-symbols-outlined text-[20px]">
-              {cv.fileType === "pdf" ? "picture_as_pdf" : "description"}
+              {fileType === "pdf" ? "picture_as_pdf" : "description"}
             </span>
           </div>
           <div className="min-w-0">
             <p className="font-title-sm text-title-sm text-on-surface truncate max-w-[220px]">
-              {cv.name}
+              {displayName}
             </p>
-            {cv.isMaster && (
+            {cv.is_current && (
               <span className="inline-flex items-center px-2 py-0.5 mt-0.5 rounded-full bg-primary/10 text-primary font-label-caps text-[10px] uppercase font-semibold tracking-wide">
-                ★ Master
+                ★ Current
               </span>
             )}
           </div>
@@ -104,14 +111,14 @@ function CVRow({ cv, onMenuClick }: { cv: CV; onMenuClick: (id: number) => void 
       {/* Version */}
       <td className="py-4 px-6">
         <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-label-caps text-label-caps border border-outline-variant/50">
-          {cv.version}
+          v{cv.version}
         </span>
       </td>
 
       {/* Uploaded Date */}
       <td className="py-4 px-6">
         <span className="font-body-md text-body-md text-on-surface-variant">
-          {cv.uploadedDate}
+          {formatDate(cv.created_at)}
         </span>
       </td>
 
@@ -148,9 +155,90 @@ function CVRow({ cv, onMenuClick }: { cv: CV; onMenuClick: (id: number) => void 
   );
 }
 
+/** Skeleton row shown while CVs are loading */
+function CVRowSkeleton() {
+  return (
+    <tr className="border-b border-outline-variant/30 last:border-0">
+      <td className="py-4 px-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-surface-container animate-pulse shrink-0" />
+          <div className="flex flex-col gap-1.5">
+            <div className="h-4 w-40 rounded-md bg-surface-container animate-pulse" />
+            <div className="h-3 w-14 rounded-md bg-surface-container animate-pulse" />
+          </div>
+        </div>
+      </td>
+      <td className="py-4 px-6">
+        <div className="h-5 w-10 rounded-full bg-surface-container animate-pulse" />
+      </td>
+      <td className="py-4 px-6">
+        <div className="h-4 w-24 rounded-md bg-surface-container animate-pulse" />
+      </td>
+      <td className="py-4 px-6">
+        <div className="h-6 w-20 rounded-full bg-surface-container animate-pulse" />
+      </td>
+      <td className="py-4 px-6" />
+    </tr>
+  );
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────────
+
 export default function MyCVsPage() {
   const [isDragging, setIsDragging] = useState(false);
-  const [activeMenu, setActiveMenu] = useState<number | null>(null);
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
+
+  // Stats
+  const [stats, setStats] = useState<CVStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState(false);
+
+  // CV list
+  const [cvs, setCvs] = useState<MasterCVVersion[]>([]);
+  const [cvsLoading, setCvsLoading] = useState(true);
+  const [cvsError, setCvsError] = useState(false);
+
+  // Fetch stats
+  useEffect(() => {
+    let cancelled = false;
+    setStatsLoading(true);
+    setStatsError(false);
+    api
+      .get<CVStats>("ai/v1/master-cv/stats")
+      .then((res) => {
+        if (!cancelled) setStats(res.data);
+      })
+      .catch(() => {
+        if (!cancelled) setStatsError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setStatsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Fetch CV list
+  useEffect(() => {
+    let cancelled = false;
+    setCvsLoading(true);
+    setCvsError(false);
+    api
+      .get<MasterCVVersion[]>("ai/v1/master-cv")
+      .then((res) => {
+        if (!cancelled) setCvs(res.data);
+      })
+      .catch(() => {
+        if (!cancelled) setCvsError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setCvsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -163,12 +251,12 @@ export default function MyCVsPage() {
     // handle dropped files here
   };
 
-  const stats = {
-    total: mockCVs.length,
-    ready: mockCVs.filter((c) => c.status === "Ready").length,
-    processing: mockCVs.filter((c) => c.status === "Processing").length,
-    failed: mockCVs.filter((c) => c.status === "Failed").length,
-  };
+  const statItems = [
+    { label: "Total CVs",  key: "total",      icon: "folder_open",  color: "text-primary bg-primary/8" },
+    { label: "Ready",      key: "ready",      icon: "check_circle", color: "text-emerald-600 bg-emerald-50" },
+    { label: "Processing", key: "processing", icon: "sync",         color: "text-amber-600 bg-amber-50" },
+    { label: "Failed",     key: "failed",     icon: "error_outline", color: "text-red-600 bg-red-50" },
+  ] as const;
 
   return (
     <main className="flex-grow p-container-padding">
@@ -192,29 +280,41 @@ export default function MyCVsPage() {
 
         {/* ── Quick Stats ── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-grid-gutter">
-          {[
-            { label: "Total CVs", value: stats.total, icon: "folder_open", color: "text-primary bg-primary/8" },
-            { label: "Ready", value: stats.ready, icon: "check_circle", color: "text-emerald-600 bg-emerald-50" },
-            { label: "Processing", value: stats.processing, icon: "sync", color: "text-amber-600 bg-amber-50" },
-            { label: "Failed", value: stats.failed, icon: "error_outline", color: "text-red-600 bg-red-50" },
-          ].map((stat) => (
-            <div
-              key={stat.label}
-              className="bg-surface-container-lowest border border-outline-variant/40 rounded-xl px-4 py-4 flex items-center gap-3"
-            >
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${stat.color}`}>
-                <span className="material-symbols-outlined text-[18px]">{stat.icon}</span>
+          {statItems.map((stat) => {
+            const value = stats?.[stat.key];
+            return (
+              <div
+                key={stat.label}
+                className="bg-surface-container-lowest border border-outline-variant/40 rounded-xl px-4 py-4 flex items-center gap-3"
+              >
+                <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${stat.color}`}>
+                  <span className="material-symbols-outlined text-[18px]">{stat.icon}</span>
+                </div>
+                <div>
+                  {statsLoading ? (
+                    <>
+                      <div className="h-6 w-8 rounded-md bg-surface-container animate-pulse mb-1" />
+                      <div className="h-3 w-14 rounded-md bg-surface-container animate-pulse" />
+                    </>
+                  ) : statsError ? (
+                    <>
+                      <p className="font-stat-lg text-[22px] font-semibold text-on-surface-variant leading-none">—</p>
+                      <p className="font-label-caps text-label-caps text-on-surface-variant mt-0.5">{stat.label}</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-stat-lg text-[22px] font-semibold text-on-surface leading-none">
+                        {value ?? 0}
+                      </p>
+                      <p className="font-label-caps text-label-caps text-on-surface-variant mt-0.5">
+                        {stat.label}
+                      </p>
+                    </>
+                  )}
+                </div>
               </div>
-              <div>
-                <p className="font-stat-lg text-[22px] font-semibold text-on-surface leading-none">
-                  {stat.value}
-                </p>
-                <p className="font-label-caps text-label-caps text-on-surface-variant mt-0.5">
-                  {stat.label}
-                </p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* ── CV Table Card ── */}
@@ -259,15 +359,40 @@ export default function MyCVsPage() {
                 </tr>
               </thead>
               <tbody>
-                {mockCVs.map((cv) => (
-                  <CVRow
-                    key={cv.id}
-                    cv={cv}
-                    onMenuClick={(id) =>
-                      setActiveMenu(activeMenu === id ? null : id)
-                    }
-                  />
-                ))}
+                {cvsLoading ? (
+                  // Skeleton rows while fetching
+                  Array.from({ length: 3 }).map((_, i) => <CVRowSkeleton key={i} />)
+                ) : cvsError ? (
+                  // Error state
+                  <tr>
+                    <td colSpan={5} className="py-14 text-center">
+                      <div className="flex flex-col items-center gap-2 text-on-surface-variant">
+                        <span className="material-symbols-outlined text-[36px] text-red-400">cloud_off</span>
+                        <p className="font-body-md text-body-md">Failed to load CVs. Please try again later.</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : cvs.length === 0 ? (
+                  // Empty state
+                  <tr>
+                    <td colSpan={5} className="py-14 text-center">
+                      <div className="flex flex-col items-center gap-2 text-on-surface-variant">
+                        <span className="material-symbols-outlined text-[36px]">folder_open</span>
+                        <p className="font-body-md text-body-md">No CVs uploaded yet.</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  cvs.map((cv) => (
+                    <CVRow
+                      key={cv.id}
+                      cv={cv}
+                      onMenuClick={(id) =>
+                        setActiveMenu(activeMenu === id ? null : id)
+                      }
+                    />
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -275,7 +400,9 @@ export default function MyCVsPage() {
           {/* Card Footer */}
           <div className="px-6 py-3 border-t border-outline-variant/30 flex items-center justify-between">
             <p className="font-body-sm text-body-sm text-on-surface-variant">
-              Showing {mockCVs.length} of {mockCVs.length} documents
+              {cvsLoading
+                ? "Loading documents…"
+                : `Showing ${cvs.length} of ${cvs.length} documents`}
             </p>
             <button className="inline-flex items-center gap-1.5 font-body-sm text-body-sm text-primary hover:underline transition-colors">
               View all
