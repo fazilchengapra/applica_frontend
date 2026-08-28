@@ -79,6 +79,23 @@ export default function Sidebar() {
               </span>
               <span className="font-label-caps text-label-caps">Dashboard</span>
             </Link>
+            {/* My CVs Tab */}
+            <Link
+              href="/dashboard/cvs"
+              className={`flex items-center gap-3 px-4 py-3 transition-transform duration-200 rounded-lg ${pathname === "/dashboard/cvs"
+                  ? "text-primary font-bold bg-surface-container-low translate-x-1"
+                  : "text-secondary hover:text-primary hover:translate-x-1"
+                }`}
+            >
+              <span
+                className={`material-symbols-outlined ${pathname === "/dashboard/cvs" ? "icon-fill" : ""
+                  }`}
+                data-icon="description"
+              >
+                description
+              </span>
+              <span className="font-label-caps text-label-caps">My CVs</span>
+            </Link>
             {/* Profile Tab */}
             <Link
               href="/dashboard/profile"

@@ -10,6 +10,7 @@ import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import { AxiosError } from "axios";
+import { useGoogleLogin } from '@react-oauth/google';
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -34,6 +35,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
   const {
     register: registerEmail,
@@ -102,6 +104,27 @@ export default function LoginPage() {
     phoneMutation.mutate(data);
   };
 
+  const googleMutation = useMutation({
+    mutationFn: async (code: string) => {
+      const response = await api.post("v1/auth/google/", { code });
+      return response.data;
+    },
+    onSuccess: () => {
+      router.push("/dashboard");
+    }
+  });
+
+  const login = useGoogleLogin({
+    flow: 'auth-code',
+    ux_mode: 'popup',
+    onSuccess: (response) => {
+      googleMutation.mutate(response.code);
+    },
+    onError: () => {
+      // Handle popup closed or error silently
+    },
+  });
+
   return (
     <div className="landing-page-theme bg-surface-container font-sans text-on-background min-h-screen flex items-center justify-center p-[16px] md:p-[40px] antialiased">
       {/* Ambient background element for modern SaaS feel */}
@@ -109,7 +132,7 @@ export default function LoginPage() {
         <div className="absolute -top-[20%] -left-[10%] w-[50vw] h-[50vw] rounded-full bg-primary-fixed-dim/30 blur-[100px]"></div>
         <div className="absolute top-[60%] -right-[10%] w-[40vw] h-[40vw] rounded-full bg-secondary-fixed-dim/20 blur-[120px]"></div>
       </div>
-      
+
       {/* Main Login Card */}
       <main className="w-full max-w-[420px] bg-surface-container-lowest rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.06)] border border-surface-container-highest p-[32px] md:p-[48px] relative z-10 flex flex-col gap-[32px]">
         {/* Header */}
@@ -130,13 +153,13 @@ export default function LoginPage() {
 
         {/* Tabbed Interface */}
         <div className="flex w-full border-b border-surface-variant">
-          <button 
+          <button
             className={`flex-1 pb-[8px] text-[14px] leading-[20px] tracking-[0.01em] font-[500] border-b-2 transition-colors focus:outline-none ${activeTab === 'email' ? 'text-primary border-primary' : 'text-on-surface-variant border-transparent hover:text-primary'}`}
             onClick={() => setActiveTab('email')}
           >
             Email
           </button>
-          <button 
+          <button
             className={`flex-1 pb-[8px] text-[14px] leading-[20px] tracking-[0.01em] font-[500] border-b-2 transition-colors focus:outline-none ${activeTab === 'phone' ? 'text-primary border-primary' : 'text-on-surface-variant border-transparent hover:text-primary'}`}
             onClick={() => setActiveTab('phone')}
           >
@@ -149,35 +172,35 @@ export default function LoginPage() {
           {/* Email Form */}
           {activeTab === 'email' && (
             <form className="flex-col gap-[24px] w-full transition-opacity duration-300 flex" onSubmit={handleEmailSubmit(onEmailSubmit)}>
-              
+
               {/* Global Error Banner */}
               {emailMutation.isError && !emailMutation.error?.response?.data?.errors && (
-                 <div className="p-[12px] bg-error-container text-on-error-container rounded-lg text-[14px] font-[500] mb-[-8px]">
-                    {emailMutation.error?.response?.data?.detail || emailMutation.error?.response?.data?.message || "Invalid credentials. Please try again."}
-                 </div>
+                <div className="p-[12px] bg-error-container text-on-error-container rounded-lg text-[14px] font-[500] mb-[-8px]">
+                  {emailMutation.error?.response?.data?.detail || emailMutation.error?.response?.data?.message || "Invalid credentials. Please try again."}
+                </div>
               )}
 
               <div className="flex flex-col gap-[16px]">
                 <div className="flex flex-col gap-[4px]">
                   <div className="relative">
                     <span className="material-symbols-outlined absolute left-[16px] top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">mail</span>
-                    <input 
-                      className={`w-full pl-[48px] pr-[16px] py-[8px] h-[44px] bg-surface-container-lowest border ${emailErrors.email ? 'border-error focus:ring-error/20' : 'border-outline-variant focus:border-primary focus:ring-primary/20'} rounded-lg text-[16px] leading-[24px] font-[400] text-on-surface focus:outline-none focus:ring-2 transition-all placeholder:text-outline`} 
-                      placeholder="name@company.com" 
-                      type="email" 
+                    <input
+                      className={`w-full pl-[48px] pr-[16px] py-[8px] h-[44px] bg-surface-container-lowest border ${emailErrors.email ? 'border-error focus:ring-error/20' : 'border-outline-variant focus:border-primary focus:ring-primary/20'} rounded-lg text-[16px] leading-[24px] font-[400] text-on-surface focus:outline-none focus:ring-2 transition-all placeholder:text-outline`}
+                      placeholder="name@company.com"
+                      type="email"
                       {...registerEmail("email")}
                     />
                   </div>
                   {emailErrors.email && <span className="text-[12px] text-error">{emailErrors.email.message}</span>}
                 </div>
-                
+
                 <div className="flex flex-col gap-[4px]">
                   <div className="relative">
                     <span className="material-symbols-outlined absolute left-[16px] top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">lock</span>
-                    <input 
-                      className={`w-full pl-[48px] pr-[40px] py-[8px] h-[44px] bg-surface-container-lowest border ${emailErrors.password ? 'border-error focus:ring-error/20' : 'border-outline-variant focus:border-primary focus:ring-primary/20'} rounded-lg text-[16px] leading-[24px] font-[400] text-on-surface focus:outline-none focus:ring-2 transition-all placeholder:text-outline`} 
-                      placeholder="Password" 
-                      type={showPassword ? "text" : "password"} 
+                    <input
+                      className={`w-full pl-[48px] pr-[40px] py-[8px] h-[44px] bg-surface-container-lowest border ${emailErrors.password ? 'border-error focus:ring-error/20' : 'border-outline-variant focus:border-primary focus:ring-primary/20'} rounded-lg text-[16px] leading-[24px] font-[400] text-on-surface focus:outline-none focus:ring-2 transition-all placeholder:text-outline`}
+                      placeholder="Password"
+                      type={showPassword ? "text" : "password"}
                       {...registerEmail("password")}
                     />
                     <button className="absolute right-[16px] top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors focus:outline-none flex items-center justify-center" onClick={() => setShowPassword(!showPassword)} type="button">
@@ -196,8 +219,8 @@ export default function LoginPage() {
                 <Link className="text-[12px] leading-[16px] tracking-[0.02em] font-[600] text-primary hover:text-primary-container transition-colors" href="/forgot-password">Forgot password?</Link>
               </div>
 
-              <button 
-                className={`w-full h-[44px] text-on-primary text-[14px] leading-[20px] tracking-[0.01em] font-[500] rounded-lg flex items-center justify-center gap-[8px] transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-container-lowest ${emailMutation.isPending ? 'bg-primary/80 cursor-wait' : 'bg-primary hover:bg-primary-container hover:shadow-md'}`} 
+              <button
+                className={`w-full h-[44px] text-on-primary text-[14px] leading-[20px] tracking-[0.01em] font-[500] rounded-lg flex items-center justify-center gap-[8px] transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-container-lowest ${emailMutation.isPending ? 'bg-primary/80 cursor-wait' : 'bg-primary hover:bg-primary-container hover:shadow-md'}`}
                 type="submit"
                 disabled={emailMutation.isPending}
               >
@@ -228,7 +251,7 @@ export default function LoginPage() {
                   <p className="text-[14px] font-[400] text-on-surface-variant mb-[24px]">
                     {phoneMutation.data?.message || "If this number is registered, a code has been sent."}
                   </p>
-                  
+
                   <form className="w-full flex flex-col gap-[16px]" onSubmit={(e) => {
                     e.preventDefault();
                     verifyMutation.mutate({
@@ -236,27 +259,27 @@ export default function LoginPage() {
                       code: otpCode
                     });
                   }}>
-                    
+
                     {/* Global Error Banner for OTP Verification */}
                     {verifyMutation.isError && (
                       <div className="p-[12px] bg-error-container text-on-error-container rounded-lg text-[14px] font-[500] mb-[-8px]">
-                          {(verifyMutation.error as AxiosError<ApiErrorResponse>)?.response?.data?.detail || "Invalid code. Please try again."}
+                        {(verifyMutation.error as AxiosError<ApiErrorResponse>)?.response?.data?.detail || "Invalid code. Please try again."}
                       </div>
                     )}
 
                     <div className="flex justify-center">
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         maxLength={6}
                         placeholder="••••••"
                         value={otpCode}
                         onChange={(e) => setOtpCode(e.target.value)}
-                        className="w-full max-w-[200px] text-center tracking-[0.5em] text-[24px] leading-[32px] font-[600] bg-surface-container-lowest border border-outline-variant focus:border-primary focus:ring-primary/20 rounded-lg px-[16px] py-[12px] focus:outline-none focus:ring-2 transition-all placeholder:text-outline-variant" 
-                        required 
+                        className="w-full max-w-[200px] text-center tracking-[0.5em] text-[24px] leading-[32px] font-[600] bg-surface-container-lowest border border-outline-variant focus:border-primary focus:ring-primary/20 rounded-lg px-[16px] py-[12px] focus:outline-none focus:ring-2 transition-all placeholder:text-outline-variant"
+                        required
                       />
                     </div>
-                    
-                    <button 
+
+                    <button
                       type="submit"
                       disabled={verifyMutation.isPending || otpCode.length < 4}
                       className={`w-full h-[44px] text-on-primary text-[14px] leading-[20px] tracking-[0.01em] font-[500] rounded-lg flex items-center justify-center gap-[8px] transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-container-lowest ${verifyMutation.isPending ? 'bg-primary/80 cursor-wait' : 'bg-primary hover:bg-primary-container hover:shadow-md'}`}
@@ -273,8 +296,8 @@ export default function LoginPage() {
                         </>
                       )}
                     </button>
-                    
-                    <button 
+
+                    <button
                       type="button"
                       onClick={() => {
                         phoneMutation.reset();
@@ -289,29 +312,29 @@ export default function LoginPage() {
                 </div>
               ) : (
                 <form className="flex-col gap-[24px] w-full flex" onSubmit={handlePhoneSubmit(onPhoneSubmit)}>
-                  
+
                   {/* Global Error Banner */}
                   {phoneMutation.isError && !phoneMutation.error?.response?.data?.errors && (
                     <div className="p-[12px] bg-error-container text-on-error-container rounded-lg text-[14px] font-[500] mb-[-8px]">
-                        {phoneMutation.error?.response?.data?.detail || phoneMutation.error?.response?.data?.message || "An error occurred. Please try again."}
+                      {phoneMutation.error?.response?.data?.detail || phoneMutation.error?.response?.data?.message || "An error occurred. Please try again."}
                     </div>
                   )}
 
                   <div className="flex flex-col gap-[4px]">
                     <div className="relative">
                       <span className="material-symbols-outlined absolute left-[16px] top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">phone</span>
-                      <input 
-                        className={`w-full pl-[48px] pr-[16px] py-[8px] h-[44px] bg-surface-container-lowest border ${phoneErrors.phone_number ? 'border-error focus:ring-error/20' : 'border-outline-variant focus:border-primary focus:ring-primary/20'} rounded-lg text-[16px] leading-[24px] font-[400] text-on-surface focus:outline-none focus:ring-2 transition-all placeholder:text-outline`} 
-                        placeholder="+1 (555) 000-0000" 
-                        type="tel" 
+                      <input
+                        className={`w-full pl-[48px] pr-[16px] py-[8px] h-[44px] bg-surface-container-lowest border ${phoneErrors.phone_number ? 'border-error focus:ring-error/20' : 'border-outline-variant focus:border-primary focus:ring-primary/20'} rounded-lg text-[16px] leading-[24px] font-[400] text-on-surface focus:outline-none focus:ring-2 transition-all placeholder:text-outline`}
+                        placeholder="+1 (555) 000-0000"
+                        type="tel"
                         {...registerPhone("phone_number")}
                       />
                     </div>
                     {phoneErrors.phone_number && <span className="text-[12px] text-error">{phoneErrors.phone_number.message}</span>}
                   </div>
-                  
-                  <button 
-                    className={`w-full h-[44px] text-on-primary text-[14px] leading-[20px] tracking-[0.01em] font-[500] rounded-lg flex items-center justify-center gap-[8px] transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-container-lowest ${phoneMutation.isPending ? 'bg-primary/80 cursor-wait' : 'bg-primary hover:bg-primary-container hover:shadow-md'}`} 
+
+                  <button
+                    className={`w-full h-[44px] text-on-primary text-[14px] leading-[20px] tracking-[0.01em] font-[500] rounded-lg flex items-center justify-center gap-[8px] transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-container-lowest ${phoneMutation.isPending ? 'bg-primary/80 cursor-wait' : 'bg-primary hover:bg-primary-container hover:shadow-md'}`}
                     type="submit"
                     disabled={phoneMutation.isPending}
                   >
@@ -341,15 +364,26 @@ export default function LoginPage() {
         </div>
 
         {/* Social Login */}
-        <button className="w-full h-[44px] bg-surface-container-lowest border border-outline-variant hover:bg-surface-container-low hover:border-outline text-on-surface text-[14px] leading-[20px] tracking-[0.01em] font-[500] rounded-lg flex items-center justify-center gap-[8px] transition-all focus:outline-none focus:ring-2 focus:ring-primary/20" type="button">
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>
-            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path>
-            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"></path>
-            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"></path>
-          </svg>
-          Continue with Google
-        </button>
+        <div className="flex flex-col gap-[8px]">
+          {googleMutation.isError && (
+            <div className="p-[12px] bg-error-container text-on-error-container rounded-lg text-[14px] font-[500]">
+              {googleMutation.error?.response?.data?.detail || "Google authentication failed. Please try again."}
+            </div>
+          )}
+          <button onClick={() => login()} disabled={googleMutation.isPending} className={`w-full h-[44px] bg-surface-container-lowest border border-outline-variant hover:bg-surface-container-low hover:border-outline text-on-surface text-[14px] leading-[20px] tracking-[0.01em] font-[500] rounded-lg flex items-center justify-center gap-[8px] transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 ${googleMutation.isPending ? 'opacity-80 cursor-wait' : ''}`} type="button">
+            {googleMutation.isPending ? (
+              <span className="material-symbols-outlined text-[20px] animate-spin">progress_activity</span>
+            ) : (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path>
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"></path>
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"></path>
+              </svg>
+            )}
+            {googleMutation.isPending ? "Connecting..." : "Continue with Google"}
+          </button>
+        </div>
 
         {/* Footer Link */}
         <div className="text-center mt-[-8px]">
