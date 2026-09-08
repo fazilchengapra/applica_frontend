@@ -72,7 +72,7 @@ export default function ProfilePage() {
               <UserRound className="h-5 w-5" />
             </div>
             <div>
-              <p className="font-label-caps text-label-caps font-semibold uppercase tracking-[0.14em] text-primary">Account</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Account</p>
               <h2 className="mt-1 text-[30px] font-[600] leading-9 tracking-tight text-on-surface">My profile</h2>
               <p className="mt-1 text-[14px] leading-6 text-on-surface-variant">Keep your personal details current and ready for every application.</p>
             </div>

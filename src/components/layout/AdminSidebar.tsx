@@ -44,7 +44,7 @@ export default function AdminSidebar() {
             <h1 className="font-display-lg text-display-lg leading-none tracking-tighter text-primary">
               applica
             </h1>
-            <p className="font-label-caps text-label-caps text-secondary opacity-60">
+            <p className="text-xs text-secondary opacity-60">
               Admin workspace
             </p>
           </div>
@@ -62,7 +62,7 @@ export default function AdminSidebar() {
                 <span className={`material-symbols-outlined ${isActive ? "icon-fill" : ""}`}>
                   {link.icon}
                 </span>
-                <span className="font-label-caps text-label-caps">{link.label}</span>
+                <span className="text-xs">{link.label}</span>
               </Link>
             );
           })}
@@ -75,7 +75,7 @@ export default function AdminSidebar() {
         className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left text-secondary transition-transform duration-200 hover:translate-x-1 hover:text-primary"
       >
         <span className="material-symbols-outlined">logout</span>
-        <span className="font-label-caps text-label-caps">Logout</span>
+        <span className="text-xs">Logout</span>
       </button>
     </aside>
   );

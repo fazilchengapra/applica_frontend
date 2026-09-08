@@ -79,7 +79,7 @@ export default function EmailChangeModal({ onClose }: { onClose: () => void }) {
                 )}
                 
                 <div className="text-left">
-                  <label className="font-label-caps text-label-caps text-secondary mb-1 block">
+                  <label className="text-xs text-secondary mb-1 block">
                     New Email Address
                   </label>
                   <input
@@ -128,7 +128,7 @@ export default function EmailChangeModal({ onClose }: { onClose: () => void }) {
         <div className="bg-surface-container-low px-6 py-4 flex justify-end border-t border-outline-variant">
           <button
             onClick={onClose}
-            className="font-label-caps text-label-caps text-secondary hover:text-on-surface transition-colors cursor-pointer"
+            className="text-xs text-secondary hover:text-on-surface transition-colors cursor-pointer"
           >
             {mutation.isSuccess ? 'Close' : 'Cancel'}
           </button>

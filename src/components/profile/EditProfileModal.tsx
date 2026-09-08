@@ -94,7 +94,7 @@ export default function EditProfileModal({ isOpen, onClose, profile }: EditProfi
             {/* Name Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <label className="font-label-caps text-label-caps text-secondary uppercase tracking-wider">First Name</label>
+                <label className="text-xs text-secondary uppercase tracking-wider">First Name</label>
                 <div className="relative">
                   <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary">person</span>
                   <input 
@@ -106,7 +106,7 @@ export default function EditProfileModal({ isOpen, onClose, profile }: EditProfi
                 </div>
               </div>
               <div className="flex flex-col gap-2">
-                <label className="font-label-caps text-label-caps text-secondary uppercase tracking-wider">Last Name</label>
+                <label className="text-xs text-secondary uppercase tracking-wider">Last Name</label>
                 <div className="relative">
                   <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary">person</span>
                   <input 
@@ -120,7 +120,7 @@ export default function EditProfileModal({ isOpen, onClose, profile }: EditProfi
             </div>
             {/* Bio */}
             <div className="flex flex-col gap-2">
-              <label className="font-label-caps text-label-caps text-secondary uppercase tracking-wider">Bio</label>
+              <label className="text-xs text-secondary uppercase tracking-wider">Bio</label>
               <div className="relative">
                 <span className="material-symbols-outlined absolute left-3 top-3 text-secondary">description</span>
                 <textarea 
@@ -134,7 +134,7 @@ export default function EditProfileModal({ isOpen, onClose, profile }: EditProfi
             {/* DOB and Gender */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <label className="font-label-caps text-label-caps text-secondary uppercase tracking-wider">Date of Birth</label>
+                <label className="text-xs text-secondary uppercase tracking-wider">Date of Birth</label>
                 <div className="relative">
                   <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary">cake</span>
                   <input 
@@ -146,7 +146,7 @@ export default function EditProfileModal({ isOpen, onClose, profile }: EditProfi
                 </div>
               </div>
               <div className="flex flex-col gap-2">
-                <label className="font-label-caps text-label-caps text-secondary uppercase tracking-wider">Gender</label>
+                <label className="text-xs text-secondary uppercase tracking-wider">Gender</label>
                 <div className="relative">
                   <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary">wc</span>
                   <select 
@@ -165,7 +165,7 @@ export default function EditProfileModal({ isOpen, onClose, profile }: EditProfi
             {/* Location Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <label className="font-label-caps text-label-caps text-secondary uppercase tracking-wider">Country</label>
+                <label className="text-xs text-secondary uppercase tracking-wider">Country</label>
                 <div className="relative">
                   <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary">public</span>
                   <input 
@@ -178,7 +178,7 @@ export default function EditProfileModal({ isOpen, onClose, profile }: EditProfi
                 </div>
               </div>
               <div className="flex flex-col gap-2">
-                <label className="font-label-caps text-label-caps text-secondary uppercase tracking-wider">City</label>
+                <label className="text-xs text-secondary uppercase tracking-wider">City</label>
                 <div className="relative">
                   <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary">location_city</span>
                   <input 

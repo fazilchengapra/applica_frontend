@@ -11,8 +11,8 @@ export default function AdminPage() {
     <main className="flex-grow bg-background p-container-padding">
       <div className="mx-auto max-w-7xl space-y-8">
         <header className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <p className="font-label-caps text-label-caps font-bold uppercase tracking-[0.12em] text-primary">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">
               Operations
             </p>
             <h2 className="mt-2 font-display-lg text-display-lg text-on-background">

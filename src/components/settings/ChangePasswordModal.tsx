@@ -103,7 +103,7 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
             <div className="space-y-4">
               {/* Current Password */}
               <div className="space-y-1.5">
-                <label className="font-label-caps text-label-caps text-secondary uppercase px-1">
+                <label className="text-xs text-secondary uppercase px-1">
                   Current Password
                 </label>
                 <div className="relative flex items-center">
@@ -132,7 +132,7 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
 
               {/* New Password */}
               <div className="space-y-1.5">
-                <label className="font-label-caps text-label-caps text-secondary uppercase px-1">
+                <label className="text-xs text-secondary uppercase px-1">
                   New Password
                 </label>
                 <div className="relative flex items-center">
@@ -165,7 +165,7 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
 
               {/* Confirm Password */}
               <div className="space-y-1.5">
-                <label className="font-label-caps text-label-caps text-secondary uppercase px-1">
+                <label className="text-xs text-secondary uppercase px-1">
                   Confirm New Password
                 </label>
                 <div className="relative flex items-center">

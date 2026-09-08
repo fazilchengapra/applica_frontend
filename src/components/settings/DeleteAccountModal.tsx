@@ -90,7 +90,7 @@ export default function DeleteAccountModal({ isOpen, onClose, onConfirm }: Delet
             )}
 
             <div className="pt-2 flex flex-col gap-2">
-              <label className="font-label-caps text-label-caps text-secondary uppercase tracking-wider">Confirm Password</label>
+              <label className="text-xs text-secondary uppercase tracking-wider">Confirm Password</label>
               <div className="relative">
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary">lock</span>
                 <input 

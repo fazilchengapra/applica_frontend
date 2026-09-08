@@ -64,7 +64,7 @@ function formatDate(iso: string): string {
 function StatusBadge({ status }: { status: MasterCVVersion["status"] }) {
   if (status === "completed") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 font-label-caps text-label-caps font-semibold text-emerald-700">
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
         <CheckCircle2 className="h-3.5 w-3.5" />
         Ready
       </span>
@@ -72,14 +72,14 @@ function StatusBadge({ status }: { status: MasterCVVersion["status"] }) {
   }
   if (status === "processing") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 font-label-caps text-label-caps font-semibold text-amber-700">
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
         <RefreshCw className="h-3.5 w-3.5 animate-spin" />
         Processing
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-2.5 py-1 font-label-caps text-label-caps font-semibold text-red-700">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700">
       <CircleAlert className="h-3.5 w-3.5" />
       Failed
     </span>
@@ -115,7 +115,7 @@ function CVRow({
               {displayName}
             </p>
             {cv.is_current && (
-              <span className="mt-0.5 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 font-label-caps text-[10px] font-semibold uppercase tracking-wide text-primary">
+              <span className="mt-0.5 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
                 Current
               </span>
             )}
@@ -125,7 +125,7 @@ function CVRow({
 
       {/* Version */}
       <td className="hidden px-6 py-4 md:table-cell">
-        <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-label-caps text-label-caps border border-outline-variant/50">
+        <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant text-xs border border-outline-variant/50">
           v{cv.version}
         </span>
       </td>
@@ -349,7 +349,7 @@ export default function MyCVsPage() {
           <div className="min-w-0">
             <div className="mb-2 flex items-center gap-2 text-primary">
               <FileText className="h-5 w-5" />
-              <span className="font-label-caps text-label-caps font-semibold uppercase tracking-[0.14em]">Master CV</span>
+              <span className="text-xs font-semibold uppercase tracking-[0.14em]">Master CV</span>
             </div>
             <h2 className="font-display-lg text-display-lg tracking-tight text-on-surface">
               Your career library
@@ -444,14 +444,14 @@ export default function MyCVsPage() {
                   ) : statsError ? (
                     <>
                       <p className="font-stat-lg text-[22px] font-semibold text-on-surface-variant leading-none">—</p>
-                      <p className="font-label-caps text-label-caps text-on-surface-variant mt-0.5">{stat.label}</p>
+                      <p className="text-xs text-on-surface-variant mt-0.5">{stat.label}</p>
                     </>
                   ) : (
                     <>
                       <p className="font-stat-lg text-[22px] font-semibold text-on-surface leading-none">
                         {value ?? 0}
                       </p>
-                      <p className="font-label-caps text-label-caps text-on-surface-variant mt-0.5">
+                      <p className="text-xs text-on-surface-variant mt-0.5">
                         {stat.label}
                       </p>
                     </>
@@ -468,11 +468,11 @@ export default function MyCVsPage() {
             <div className="relative z-10 max-w-[32rem]">
               <div className="mb-5 flex items-center gap-2 text-[#b9e8ff]">
                 <Sparkles className="h-4 w-4" />
-                <span className="font-label-caps text-label-caps font-semibold uppercase tracking-[0.14em]">Smart readiness</span>
+                <span className="text-xs font-semibold uppercase tracking-[0.14em]">Smart readiness</span>
               </div>
               <h3 className="text-[24px] font-[600] leading-8 tracking-tight">Your master CV is almost ready to work harder.</h3>
               <p className="mt-2 max-w-[28rem] text-[14px] leading-6 text-[#d7efff]">A few focused improvements can make your profile easier for recruiters and matching systems to understand.</p>
-              <button className="mt-5 inline-flex items-center gap-2 rounded-lg bg-white px-3.5 py-2 font-label-caps text-label-caps font-semibold text-[#0f3d67] transition-colors hover:bg-[#e8f6ff]">
+              <button className="mt-5 inline-flex items-center gap-2 rounded-lg bg-white px-3.5 py-2 text-xs font-semibold text-[#0f3d67] transition-colors hover:bg-[#e8f6ff]">
                 Review suggestions
                 <Target className="h-4 w-4" />
               </button>
@@ -484,7 +484,7 @@ export default function MyCVsPage() {
           <div className="rounded-2xl border border-outline-variant/40 bg-surface-container-lowest p-5 shadow-sm">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="font-label-caps text-label-caps font-semibold uppercase tracking-[0.12em] text-on-surface-variant">Readiness score</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-on-surface-variant">Readiness score</p>
                 <p className="mt-1 text-[32px] font-[600] leading-9 text-on-surface">82<span className="text-[16px] text-on-surface-variant">/100</span></p>
               </div>
               <div className="flex h-11 w-11 items-center justify-center rounded-full border-[5px] border-emerald-100 text-[12px] font-semibold text-emerald-700">82%</div>
@@ -525,19 +525,19 @@ export default function MyCVsPage() {
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-surface-container-low/60">
-                  <th className="px-4 py-3 font-label-caps text-label-caps font-semibold uppercase tracking-wider text-on-surface-variant sm:px-6">
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-on-surface-variant sm:px-6">
                     Document
                   </th>
-                  <th className="hidden px-6 py-3 font-label-caps text-label-caps font-semibold uppercase tracking-wider text-on-surface-variant sm:table-cell">
+                  <th className="hidden px-6 py-3 text-xs font-semibold uppercase tracking-wider text-on-surface-variant sm:table-cell">
                     Version
                   </th>
-                  <th className="hidden px-6 py-3 font-label-caps text-label-caps font-semibold uppercase tracking-wider text-on-surface-variant md:table-cell">
+                  <th className="hidden px-6 py-3 text-xs font-semibold uppercase tracking-wider text-on-surface-variant md:table-cell">
                     Uploaded
                   </th>
-                  <th className="px-4 py-3 font-label-caps text-label-caps font-semibold uppercase tracking-wider text-on-surface-variant sm:px-6">
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-on-surface-variant sm:px-6">
                     Status
                   </th>
-                  <th className="px-4 py-3 text-right font-label-caps text-label-caps font-semibold uppercase tracking-wider text-on-surface-variant sm:px-6">
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-on-surface-variant sm:px-6">
                     Actions
                   </th>
                 </tr>

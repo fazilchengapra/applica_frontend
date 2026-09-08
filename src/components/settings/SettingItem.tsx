@@ -14,7 +14,7 @@ export default function SettingItem({ title, value, buttonText, onClick }: Setti
       </div>
       <button 
         onClick={onClick}
-        className="px-4 py-2 bg-surface-container-lowest border border-outline-variant hover:bg-surface-container-low text-on-surface font-label-caps text-label-caps rounded-lg transition-colors cursor-pointer shadow-sm"
+        className="px-4 py-2 bg-surface-container-lowest border border-outline-variant hover:bg-surface-container-low text-on-surface text-xs rounded-lg transition-colors cursor-pointer shadow-sm"
       >
         {buttonText}
       </button>

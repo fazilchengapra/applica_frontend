@@ -57,7 +57,7 @@ export default function Sidebar() {
               <h1 className="font-display-lg text-display-lg text-primary tracking-tighter leading-none">
                 applica
               </h1>
-              <p className="font-label-caps text-label-caps text-secondary opacity-60">
+              <p className="text-xs text-secondary opacity-60">
                 Job Automation
               </p>
             </div>
@@ -78,7 +78,7 @@ export default function Sidebar() {
               >
                 dashboard
               </span>
-              <span className="font-label-caps text-label-caps">Dashboard</span>
+              <span className="text-xs">Dashboard</span>
             </Link>
             {/* My CVs Tab */}
             <Link
@@ -95,7 +95,7 @@ export default function Sidebar() {
               >
                 description
               </span>
-              <span className="font-label-caps text-label-caps">My CVs</span>
+              <span className="text-xs">My CVs</span>
             </Link>
             {/* Profile Tab */}
             <Link
@@ -112,7 +112,7 @@ export default function Sidebar() {
               >
                 person
               </span>
-              <span className="font-label-caps text-label-caps">Profile</span>
+              <span className="text-xs">Profile</span>
             </Link>
           </nav>
         </div>
@@ -132,7 +132,7 @@ export default function Sidebar() {
             >
               settings
             </span>
-            <span className="font-label-caps text-label-caps">Settings</span>
+            <span className="text-xs">Settings</span>
           </Link>
           {/* Logout */}
           <button 
@@ -142,7 +142,7 @@ export default function Sidebar() {
             <span className="material-symbols-outlined" data-icon="logout">
               logout
             </span>
-            <span className="font-label-caps text-label-caps">Logout</span>
+            <span className="text-xs">Logout</span>
           </button>
         </nav>
       </aside>
