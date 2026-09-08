@@ -1,7 +1,29 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { startTransition, useState, useEffect, useRef } from "react";
 import api from "@/lib/axios";
+import { isCvRealtimeEvent } from "@/store/slices/notificationSlice";
+import { useAppSelector } from "@/store";
+import {
+  ArrowDownUp,
+  CheckCircle2,
+  CircleAlert,
+  CloudOff,
+  CloudUpload,
+  Download,
+  ExternalLink,
+  FileText,
+  FileType2,
+  Filter,
+  FolderOpen,
+  MoreHorizontal,
+  RefreshCw,
+  Sparkles,
+  Target,
+  Upload,
+  LoaderCircle,
+  type LucideIcon,
+} from "lucide-react";
 
 // ── API types ────────────────────────────────────────────────────────────────
 
@@ -42,27 +64,23 @@ function formatDate(iso: string): string {
 function StatusBadge({ status }: { status: MasterCVVersion["status"] }) {
   if (status === "completed") {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-label-caps text-label-caps font-semibold border border-emerald-200">
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 font-label-caps text-label-caps font-semibold text-emerald-700">
+        <CheckCircle2 className="h-3.5 w-3.5" />
         Ready
       </span>
     );
   }
   if (status === "processing") {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 font-label-caps text-label-caps font-semibold border border-amber-200">
-        <span className="material-symbols-outlined text-[13px] animate-spin">
-          sync
-        </span>
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 font-label-caps text-label-caps font-semibold text-amber-700">
+        <RefreshCw className="h-3.5 w-3.5 animate-spin" />
         Processing
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-50 text-red-700 font-label-caps text-label-caps font-semibold border border-red-200">
-      <span className="material-symbols-outlined text-[13px]">
-        error_outline
-      </span>
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-2.5 py-1 font-label-caps text-label-caps font-semibold text-red-700">
+      <CircleAlert className="h-3.5 w-3.5" />
       Failed
     </span>
   );
@@ -80,28 +98,25 @@ function CVRow({
   const displayName = `${cv.target_role} — v${cv.version}.${fileType}`;
 
   return (
-    <tr className="group hover:bg-surface-container-low/50 transition-colors duration-150 border-b border-outline-variant/30 last:border-0">
+    <tr className="group border-b border-outline-variant/30 transition-colors duration-150 last:border-0 hover:bg-surface-container-low/50">
       {/* Document Name */}
-      <td className="py-4 px-6">
+      <td className="hidden px-6 py-4 sm:table-cell">
         <div className="flex items-center gap-3">
           <div
-            className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-150 ${
-              fileType === "pdf"
-                ? "bg-primary/8 text-primary group-hover:bg-primary/14"
-                : "bg-tertiary/8 text-tertiary group-hover:bg-tertiary/14"
-            }`}
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors duration-150 ${fileType === "pdf"
+              ? "bg-primary/8 text-primary group-hover:bg-primary/14"
+              : "bg-tertiary/8 text-tertiary group-hover:bg-tertiary/14"
+              }`}
           >
-            <span className="material-symbols-outlined text-[20px]">
-              {fileType === "pdf" ? "picture_as_pdf" : "description"}
-            </span>
+            {fileType === "pdf" ? <FileText className="h-5 w-5" /> : <FileType2 className="h-5 w-5" />}
           </div>
           <div className="min-w-0">
             <p className="font-title-sm text-title-sm text-on-surface truncate max-w-[220px]">
               {displayName}
             </p>
             {cv.is_current && (
-              <span className="inline-flex items-center px-2 py-0.5 mt-0.5 rounded-full bg-primary/10 text-primary font-label-caps text-[10px] uppercase font-semibold tracking-wide">
-                ★ Current
+              <span className="mt-0.5 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 font-label-caps text-[10px] font-semibold uppercase tracking-wide text-primary">
+                Current
               </span>
             )}
           </div>
@@ -109,7 +124,7 @@ function CVRow({
       </td>
 
       {/* Version */}
-      <td className="py-4 px-6">
+      <td className="hidden px-6 py-4 md:table-cell">
         <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-label-caps text-label-caps border border-outline-variant/50">
           v{cv.version}
         </span>
@@ -129,25 +144,28 @@ function CVRow({
 
       {/* Actions */}
       <td className="py-4 px-6">
-        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+        <div className="flex items-center justify-end gap-1 opacity-100 transition-opacity duration-150 lg:opacity-0 lg:group-hover:opacity-100">
           <button
             title="Download"
-            className="p-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-primary/8 transition-colors"
+            aria-label={`Download ${displayName}`}
+            className="rounded-lg p-2 text-on-surface-variant transition-colors hover:bg-primary/8 hover:text-primary"
           >
-            <span className="material-symbols-outlined text-[18px]">download</span>
+            <Download className="h-[18px] w-[18px]" />
           </button>
           <button
             title="Preview"
-            className="p-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-primary/8 transition-colors"
+            aria-label={`Preview ${displayName}`}
+            className="rounded-lg p-2 text-on-surface-variant transition-colors hover:bg-primary/8 hover:text-primary"
           >
-            <span className="material-symbols-outlined text-[18px]">open_in_new</span>
+            <ExternalLink className="h-[18px] w-[18px]" />
           </button>
           <button
             title="More options"
+            aria-label={`More options for ${displayName}`}
             onClick={() => onMenuClick(cv.id)}
-            className="p-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
+            className="rounded-lg p-2 text-on-surface-variant transition-colors hover:bg-surface-container hover:text-on-surface"
           >
-            <span className="material-symbols-outlined text-[18px]">more_vert</span>
+            <MoreHorizontal className="h-[18px] w-[18px]" />
           </button>
         </div>
       </td>
@@ -185,8 +203,19 @@ function CVRowSkeleton() {
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function MyCVsPage() {
+  const lastRealtimeEvent = useAppSelector(
+    (state) => state.notifications.lastEvent,
+  );
   const [isDragging, setIsDragging] = useState(false);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [showUploadForm, setShowUploadForm] = useState(false);
+  const [targetRole, setTargetRole] = useState("frontend developer");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadMessage, setUploadMessage] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Stats
   const [stats, setStats] = useState<CVStats | null>(null);
@@ -200,9 +229,13 @@ export default function MyCVsPage() {
 
   // Fetch stats
   useEffect(() => {
+    if (lastRealtimeEvent && !isCvRealtimeEvent(lastRealtimeEvent)) return;
+
     let cancelled = false;
-    setStatsLoading(true);
-    setStatsError(false);
+    startTransition(() => {
+      setStatsLoading(true);
+      setStatsError(false);
+    });
     api
       .get<CVStats>("ai/v1/master-cv/stats")
       .then((res) => {
@@ -217,13 +250,17 @@ export default function MyCVsPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [lastRealtimeEvent, refreshKey]);
 
   // Fetch CV list
   useEffect(() => {
+    if (lastRealtimeEvent && !isCvRealtimeEvent(lastRealtimeEvent)) return;
+
     let cancelled = false;
-    setCvsLoading(true);
-    setCvsError(false);
+    startTransition(() => {
+      setCvsLoading(true);
+      setCvsError(false);
+    });
     api
       .get<MasterCVVersion[]>("ai/v1/master-cv")
       .then((res) => {
@@ -238,7 +275,46 @@ export default function MyCVsPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [lastRealtimeEvent, refreshKey]);
+
+  const uploadCV = async (file: File) => {
+    setUploadMessage(null);
+    setUploadError(null);
+    setIsUploading(true);
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("target_role", targetRole.trim() || "frontend developer");
+
+    try {
+      await api.post("ai/v1/master-cv", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setUploadMessage(`${file.name} uploaded successfully.`);
+      setSelectedFile(null);
+      setShowUploadForm(false);
+      setRefreshKey((value) => value + 1);
+    } catch {
+      setUploadError("Upload failed. Please check the file and try again.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleFileSelect = (file: File | undefined) => {
+    if (!file) return;
+    if (!/application\/pdf|application\/vnd.openxmlformats-officedocument.wordprocessingml.document/.test(file.type) && !/\.(pdf|docx)$/i.test(file.name)) {
+      setUploadError("Please choose a PDF or DOCX file.");
+      return;
+    }
+    setSelectedFile(file);
+    setUploadError(null);
+  };
+
+  const handleUploadSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (selectedFile) void uploadCV(selectedFile);
+  };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -248,35 +324,104 @@ export default function MyCVsPage() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    // handle dropped files here
+    handleFileSelect(e.dataTransfer.files[0]);
   };
 
-  const statItems = [
-    { label: "Total CVs",  key: "total",      icon: "folder_open",  color: "text-primary bg-primary/8" },
-    { label: "Ready",      key: "ready",      icon: "check_circle", color: "text-emerald-600 bg-emerald-50" },
-    { label: "Processing", key: "processing", icon: "sync",         color: "text-amber-600 bg-amber-50" },
-    { label: "Failed",     key: "failed",     icon: "error_outline", color: "text-red-600 bg-red-50" },
+  const statItems: { label: string; key: keyof CVStats; icon: LucideIcon; color: string }[] = [
+    { label: "Total CVs", key: "total", icon: FolderOpen, color: "text-primary bg-primary/8" },
+    { label: "Ready", key: "ready", icon: CheckCircle2, color: "text-emerald-600 bg-emerald-50" },
+    { label: "Processing", key: "processing", icon: RefreshCw, color: "text-amber-600 bg-amber-50" },
+    { label: "Failed", key: "failed", icon: CircleAlert, color: "text-red-600 bg-red-50" },
   ] as const;
 
+  const readinessInsights = [
+    { label: "Contact details", value: "Complete", done: true },
+    { label: "Role keywords", value: "Add 3 more", done: false },
+    { label: "Impact statements", value: "Strong", done: true },
+  ];
+
   return (
-    <main className="flex-grow p-container-padding">
-      <div className="max-w-6xl mx-auto flex flex-col gap-stack-gap">
+    <main className="flex-grow w-full p-4 sm:p-6 lg:p-container-padding">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
 
         {/* ── Page Header ── */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div>
-            <h2 className="font-display-lg text-display-lg text-on-surface tracking-tight">
-              My CVs
+        <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+          <div className="min-w-0">
+            <div className="mb-2 flex items-center gap-2 text-primary">
+              <FileText className="h-5 w-5" />
+              <span className="font-label-caps text-label-caps font-semibold uppercase tracking-[0.14em]">Master CV</span>
+            </div>
+            <h2 className="font-display-lg text-display-lg tracking-tight text-on-surface">
+              Your career library
             </h2>
-            <p className="font-body-md text-body-md text-secondary mt-1">
-              Manage and upload your resumes for different job applications.
+            <p className="mt-1 max-w-[36rem] font-body-md text-body-md text-secondary">
+              Keep one strong source resume and create tailored versions when the opportunity calls for it.
             </p>
           </div>
-          <button className="self-start sm:self-auto inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary font-title-sm text-title-sm rounded-xl hover:bg-surface-tint active:scale-[0.98] transition-all shadow-sm shadow-primary/20">
-            <span className="material-symbols-outlined text-[18px]">upload_file</span>
-            Upload CV
+          <button
+            type="button"
+            onClick={() => setShowUploadForm((value) => !value)}
+            disabled={isUploading}
+            className="inline-flex items-center gap-2 justify-self-start rounded-lg bg-primary px-4 py-2.5 font-title-sm text-title-sm text-on-primary shadow-sm shadow-primary/20 transition-all hover:bg-surface-tint active:scale-[0.98] disabled:cursor-wait disabled:opacity-70 sm:justify-self-end"
+          >
+            {isUploading ? <LoaderCircle className="h-[18px] w-[18px] animate-spin" /> : <Upload className="h-[18px] w-[18px]" />}
+            {isUploading ? "Uploading..." : showUploadForm ? "Close upload" : "Upload CV"}
           </button>
         </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          className="hidden"
+          onChange={(event) => {
+            handleFileSelect(event.target.files?.[0]);
+            event.target.value = "";
+          }}
+        />
+
+        {showUploadForm && (
+          <form onSubmit={handleUploadSubmit} className="grid gap-4 rounded-xl border border-primary/20 bg-primary/[0.03] p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
+            <div className="flex flex-col gap-2">
+              <label htmlFor="target-role" className="text-[13px] font-semibold text-on-surface">
+                Target role
+              </label>
+              <input
+                id="target-role"
+                value={targetRole}
+                onChange={(event) => setTargetRole(event.target.value)}
+                placeholder="frontend developer"
+                className="h-10 w-full rounded-lg border border-outline-variant bg-surface px-3 text-[14px] text-on-surface outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
+                required
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <span className="text-[13px] font-semibold text-on-surface">CV file</span>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex h-10 min-w-0 items-center gap-2 rounded-lg border border-dashed border-outline-variant bg-surface px-3 text-left text-[14px] text-on-surface-variant transition hover:border-primary hover:text-primary"
+              >
+                <FileText className="h-4 w-4 shrink-0" />
+                <span className="truncate">{selectedFile?.name || "Choose PDF or DOCX"}</span>
+              </button>
+            </div>
+            <button
+              type="submit"
+              disabled={!selectedFile || isUploading}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-[13px] font-semibold text-on-primary transition hover:bg-surface-tint disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isUploading && <LoaderCircle className="h-4 w-4 animate-spin" />}
+              {isUploading ? "Uploading..." : "Upload file"}
+            </button>
+          </form>
+        )}
+
+        {(uploadMessage || uploadError) && (
+          <p className={`text-[13px] ${uploadError ? "text-error" : "text-emerald-700"}`} role="status">
+            {uploadError || uploadMessage}
+          </p>
+        )}
 
         {/* ── Quick Stats ── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-grid-gutter">
@@ -285,10 +430,10 @@ export default function MyCVsPage() {
             return (
               <div
                 key={stat.label}
-                className="bg-surface-container-lowest border border-outline-variant/40 rounded-xl px-4 py-4 flex items-center gap-3"
+                className="flex items-center gap-3 rounded-xl border border-outline-variant/40 bg-surface-container-lowest px-4 py-4"
               >
-                <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${stat.color}`}>
-                  <span className="material-symbols-outlined text-[18px]">{stat.icon}</span>
+                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${stat.color}`}>
+                  <stat.icon className="h-[18px] w-[18px]" />
                 </div>
                 <div>
                   {statsLoading ? (
@@ -317,21 +462,60 @@ export default function MyCVsPage() {
           })}
         </div>
 
+        {/* ── Local CV readiness feature ── */}
+        <section className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
+          <div className="relative overflow-hidden rounded-2xl bg-[#0f3d67] p-6 text-white shadow-sm sm:p-7">
+            <div className="relative z-10 max-w-[32rem]">
+              <div className="mb-5 flex items-center gap-2 text-[#b9e8ff]">
+                <Sparkles className="h-4 w-4" />
+                <span className="font-label-caps text-label-caps font-semibold uppercase tracking-[0.14em]">Smart readiness</span>
+              </div>
+              <h3 className="text-[24px] font-[600] leading-8 tracking-tight">Your master CV is almost ready to work harder.</h3>
+              <p className="mt-2 max-w-[28rem] text-[14px] leading-6 text-[#d7efff]">A few focused improvements can make your profile easier for recruiters and matching systems to understand.</p>
+              <button className="mt-5 inline-flex items-center gap-2 rounded-lg bg-white px-3.5 py-2 font-label-caps text-label-caps font-semibold text-[#0f3d67] transition-colors hover:bg-[#e8f6ff]">
+                Review suggestions
+                <Target className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="absolute -right-12 -top-16 h-48 w-48 rounded-full border-[24px] border-white/10" />
+            <div className="absolute -bottom-24 right-20 h-52 w-52 rounded-full border-[24px] border-[#66d2e8]/20" />
+          </div>
+
+          <div className="rounded-2xl border border-outline-variant/40 bg-surface-container-lowest p-5 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="font-label-caps text-label-caps font-semibold uppercase tracking-[0.12em] text-on-surface-variant">Readiness score</p>
+                <p className="mt-1 text-[32px] font-[600] leading-9 text-on-surface">82<span className="text-[16px] text-on-surface-variant">/100</span></p>
+              </div>
+              <div className="flex h-11 w-11 items-center justify-center rounded-full border-[5px] border-emerald-100 text-[12px] font-semibold text-emerald-700">82%</div>
+            </div>
+            <div className="mt-5 space-y-3">
+              {readinessInsights.map((item) => (
+                <div key={item.label} className="flex items-center justify-between gap-3 text-[13px]">
+                  <span className="flex items-center gap-2 text-on-surface-variant">
+                    {item.done ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <CircleAlert className="h-4 w-4 text-amber-600" />}
+                    {item.label}
+                  </span>
+                  <span className={item.done ? "font-semibold text-emerald-700" : "font-semibold text-amber-700"}>{item.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* ── CV Table Card ── */}
-        <div className="bg-surface-container-lowest border border-outline-variant/40 rounded-2xl shadow-sm overflow-hidden">
+        <div className="overflow-hidden rounded-2xl border border-outline-variant/40 bg-surface-container-lowest shadow-sm">
           {/* Card Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-outline-variant/30">
+          <div className="flex items-center justify-between gap-4 border-b border-outline-variant/30 px-4 py-4 sm:px-6">
             <h3 className="font-title-sm text-title-sm text-on-surface">
               All Documents
             </h3>
             <div className="flex items-center gap-2">
-              <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low font-body-sm text-body-sm transition-colors">
-                <span className="material-symbols-outlined text-[16px]">filter_list</span>
-                Filter
+              <button aria-label="Filter documents" title="Filter documents" className="rounded-lg p-2 text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-primary">
+                <Filter className="h-4 w-4" />
               </button>
-              <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low font-body-sm text-body-sm transition-colors">
-                <span className="material-symbols-outlined text-[16px]">sort</span>
-                Sort
+              <button aria-label="Sort documents" title="Sort documents" className="rounded-lg p-2 text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-primary">
+                <ArrowDownUp className="h-4 w-4" />
               </button>
             </div>
           </div>
@@ -341,19 +525,19 @@ export default function MyCVsPage() {
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-surface-container-low/60">
-                  <th className="py-3 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider font-semibold">
+                  <th className="px-4 py-3 font-label-caps text-label-caps font-semibold uppercase tracking-wider text-on-surface-variant sm:px-6">
                     Document
                   </th>
-                  <th className="py-3 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider font-semibold">
+                  <th className="hidden px-6 py-3 font-label-caps text-label-caps font-semibold uppercase tracking-wider text-on-surface-variant sm:table-cell">
                     Version
                   </th>
-                  <th className="py-3 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider font-semibold">
+                  <th className="hidden px-6 py-3 font-label-caps text-label-caps font-semibold uppercase tracking-wider text-on-surface-variant md:table-cell">
                     Uploaded
                   </th>
-                  <th className="py-3 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider font-semibold">
+                  <th className="px-4 py-3 font-label-caps text-label-caps font-semibold uppercase tracking-wider text-on-surface-variant sm:px-6">
                     Status
                   </th>
-                  <th className="py-3 px-6 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider font-semibold text-right">
+                  <th className="px-4 py-3 text-right font-label-caps text-label-caps font-semibold uppercase tracking-wider text-on-surface-variant sm:px-6">
                     Actions
                   </th>
                 </tr>
@@ -367,7 +551,7 @@ export default function MyCVsPage() {
                   <tr>
                     <td colSpan={5} className="py-14 text-center">
                       <div className="flex flex-col items-center gap-2 text-on-surface-variant">
-                        <span className="material-symbols-outlined text-[36px] text-red-400">cloud_off</span>
+                        <CloudOff className="h-9 w-9 text-red-400" />
                         <p className="font-body-md text-body-md">Failed to load CVs. Please try again later.</p>
                       </div>
                     </td>
@@ -377,7 +561,7 @@ export default function MyCVsPage() {
                   <tr>
                     <td colSpan={5} className="py-14 text-center">
                       <div className="flex flex-col items-center gap-2 text-on-surface-variant">
-                        <span className="material-symbols-outlined text-[36px]">folder_open</span>
+                        <FolderOpen className="h-9 w-9" />
                         <p className="font-body-md text-body-md">No CVs uploaded yet.</p>
                       </div>
                     </td>
@@ -398,7 +582,7 @@ export default function MyCVsPage() {
           </div>
 
           {/* Card Footer */}
-          <div className="px-6 py-3 border-t border-outline-variant/30 flex items-center justify-between">
+          <div className="flex items-center justify-between border-t border-outline-variant/30 px-4 py-3 sm:px-6">
             <p className="font-body-sm text-body-sm text-on-surface-variant">
               {cvsLoading
                 ? "Loading documents…"
@@ -406,7 +590,7 @@ export default function MyCVsPage() {
             </p>
             <button className="inline-flex items-center gap-1.5 font-body-sm text-body-sm text-primary hover:underline transition-colors">
               View all
-              <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+              <ExternalLink className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
@@ -416,27 +600,23 @@ export default function MyCVsPage() {
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={`border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center text-center transition-all duration-200 ${
-            isDragging
-              ? "border-primary bg-primary/5 scale-[1.01]"
-              : "border-outline-variant/60 bg-surface-container-lowest hover:border-primary/40 hover:bg-surface-container-low/40"
-          }`}
+          className={`border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center text-center transition-all duration-200 ${isDragging
+            ? "border-primary bg-primary/5 scale-[1.01]"
+            : "border-outline-variant/60 bg-surface-container-lowest hover:border-primary/40 hover:bg-surface-container-low/40"
+            }`}
         >
           <div
-            className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-5 transition-colors duration-200 ${
-              isDragging ? "bg-primary/12 text-primary" : "bg-surface-container text-on-surface-variant"
-            }`}
+            className={`mb-5 flex h-14 w-14 items-center justify-center rounded-2xl transition-colors duration-200 ${isDragging ? "bg-primary/12 text-primary" : "bg-surface-container text-on-surface-variant"
+              }`}
           >
-            <span className="material-symbols-outlined text-[28px]">
-              cloud_upload
-            </span>
+            <CloudUpload className="h-7 w-7" />
           </div>
           <h4 className="font-headline-md text-headline-md text-on-surface font-semibold mb-2">
             {isDragging ? "Drop to upload" : "Drag & drop your CV here"}
           </h4>
-          <p className="font-body-md text-body-md text-on-surface-variant max-w-xs mb-5">
+          <p className="mb-5 max-w-[20rem] font-body-md text-body-md text-on-surface-variant">
             or{" "}
-            <button className="text-primary font-medium hover:underline focus:outline-none">
+            <button type="button" onClick={() => fileInputRef.current?.click()} className="text-primary font-medium hover:underline focus:outline-none">
               browse from your computer
             </button>{" "}
             to get started.

@@ -8,6 +8,7 @@ import ProfileIntro from "@/components/profile/ProfileIntro";
 import ProfileAbout from "@/components/profile/ProfileAbout";
 import EditProfileModal from "@/components/profile/EditProfileModal";
 import { useAppSelector } from "@/store";
+import { AlertCircle, Edit3, LoaderCircle, UserRound } from "lucide-react";
 
 interface UserProfileResponse {
   first_name: string;
@@ -41,10 +42,10 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="flex-grow flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-4">
-          <span className="material-symbols-outlined text-[40px] text-primary animate-spin">progress_activity</span>
-          <p className="text-on-surface-variant font-medium">Loading profile...</p>
+      <div className="flex min-h-[480px] flex-grow items-center justify-center">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-[14px] font-semibold text-on-surface-variant">Loading your profile</p>
         </div>
       </div>
     );
@@ -52,25 +53,35 @@ export default function ProfilePage() {
 
   if (isError || !profile) {
     return (
-      <div className="flex-grow flex items-center justify-center min-h-[400px]">
-        <div className="bg-error-container text-on-error-container px-6 py-4 rounded-lg">
-          <h3 className="font-bold text-lg mb-2">Error Loading Profile</h3>
-          <p>Could not fetch your profile details. Please try again later.</p>
+      <div className="flex min-h-[480px] flex-grow items-center justify-center p-6">
+        <div className="flex max-w-md flex-col items-center rounded-2xl border border-red-200 bg-red-50 px-8 py-7 text-center text-red-800">
+          <AlertCircle className="mb-3 h-8 w-8 text-red-500" />
+          <h3 className="text-lg font-semibold">Unable to load profile</h3>
+          <p className="mt-1 text-[14px] leading-6">Could not fetch your profile details. Please try again later.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <main className="flex-grow p-[16px] md:p-[24px] flex flex-col gap-[24px] w-full">
-      <div className="max-w-7xl mx-auto w-full flex flex-col gap-[24px]">
-        <div className="flex justify-between items-center w-full">
-          <h2 className="font-display-lg text-[32px] font-[700] text-on-surface tracking-tight">My Profile</h2>
+    <main className="w-full flex-grow bg-surface-container-low p-4 sm:p-6 lg:p-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+          <div className="flex items-start gap-3">
+            <div className="mt-1 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <UserRound className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="font-label-caps text-label-caps font-semibold uppercase tracking-[0.14em] text-primary">Account</p>
+              <h2 className="mt-1 text-[30px] font-[600] leading-9 tracking-tight text-on-surface">My profile</h2>
+              <p className="mt-1 text-[14px] leading-6 text-on-surface-variant">Keep your personal details current and ready for every application.</p>
+            </div>
+          </div>
           <button 
             onClick={() => setIsEditModalOpen(true)}
-            className="flex items-center gap-2 bg-primary text-on-primary px-4 py-2 rounded-lg text-[14px] font-[600] hover:bg-primary-container hover:shadow-md transition-all cursor-pointer"
+            className="inline-flex items-center gap-2 self-start rounded-lg bg-primary px-4 py-2.5 text-[14px] font-[600] text-on-primary shadow-sm transition-all hover:bg-primary-container hover:shadow-md sm:self-auto"
           >
-            <span className="material-symbols-outlined text-[18px]">edit</span>
+            <Edit3 className="h-[18px] w-[18px]" />
             Edit Profile
           </button>
         </div>

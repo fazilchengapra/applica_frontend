@@ -22,6 +22,7 @@ export default function Sidebar() {
       console.error("Logout failed on server", error);
     } finally {
       // Always clear client state and redirect, even if server request fails
+      sessionStorage.removeItem("applica-role-landing-complete");
       dispatch(clearUser());
       router.push("/login");
     }

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Footer from "@/components/layout/Footer";
+import PublicOnlyGuard from "@/components/auth/PublicOnlyGuard";
 
 export default function Home() {
   const [activeSection, setActiveSection] = useState("");
@@ -48,6 +49,7 @@ export default function Home() {
   }, []);
 
  return (
+ <PublicOnlyGuard>
  <div className="landing-page-theme flex flex-col flex-1 bg-background text-on-background font-sans">
  {/* TopNavBar */}
  <nav className="sticky top-0 w-full bg-surface/80 dark:bg-surface-dim/80 backdrop-blur-md shadow-sm z-50 transition-all duration-300">
@@ -400,5 +402,6 @@ export default function Home() {
  </main>
  <Footer />
  </div>
+ </PublicOnlyGuard>
  );
 }

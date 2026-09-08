@@ -3,13 +3,18 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/store";
-import { setUser, clearUser, setLoading } from "@/store/slices/authSlice";
+import { setUser, clearUser } from "@/store/slices/authSlice";
 import api from "@/lib/axios";
+import { LoaderCircle } from "lucide-react";
 
 export default function AuthGuard({
   children,
+  staffOnly = false,
+  redirectStaff = false,
 }: {
   children: React.ReactNode;
+  staffOnly?: boolean;
+  redirectStaff?: boolean;
 }) {
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -21,10 +26,18 @@ export default function AuthGuard({
     const checkAuth = async () => {
       try {
         const response = await api.get("v1/users/me/");
+        const user = { ...response.data, is_staff: Boolean(response.data?.is_staff) };
+
         if (isMounted) {
-          dispatch(setUser(response.data));
+          dispatch(setUser(user));
+
+          if (staffOnly && !user.is_staff) {
+            router.replace("/dashboard");
+          } else if (redirectStaff && user.is_staff) {
+            router.replace("/admin");
+          }
         }
-      } catch (error: any) {
+      } catch {
         if (isMounted) {
           dispatch(clearUser());
           router.push("/login");
@@ -37,15 +50,12 @@ export default function AuthGuard({
     return () => {
       isMounted = false;
     };
-  }, [dispatch, router]);
+  }, [dispatch, redirectStaff, router, staffOnly]);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <span className="material-symbols-outlined text-[40px] text-primary animate-spin">progress_activity</span>
-          <p className="text-on-surface-variant font-medium">Authenticating...</p>
-        </div>
+      <div className="flex min-h-screen w-full items-center justify-center bg-background">
+        <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }

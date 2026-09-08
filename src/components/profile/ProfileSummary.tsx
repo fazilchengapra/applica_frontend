@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { CalendarDays, UserRound } from "lucide-react";
 
 interface ProfileSummaryProps {
   firstName: string;
@@ -23,26 +24,20 @@ export default function ProfileSummary({
     : 'Not provided';
 
   return (
-    <div className="lg:col-span-5 bg-surface-container-lowest border border-surface-variant rounded-xl p-8 flex flex-col items-center text-center shadow-sm relative overflow-hidden group">
-      {/* Subtle decorative background element */}
-      <div className="absolute top-0 right-0 -mt-10 -mr-10 w-32 h-32 bg-primary-fixed rounded-full blur-3xl opacity-50 group-hover:opacity-70 transition-opacity duration-500"></div>
-      <div className="relative w-32 h-32 rounded-full bg-surface-container-high overflow-hidden mb-6 border-4 border-surface shadow-md">
-        <Image
-          alt={`${nameToDisplay} profile picture`}
-          className="w-full h-full object-cover"
-          src={avatar}
-          width={128}
-          height={128}
-          unoptimized
-        />
+    <div className="relative flex flex-col items-center overflow-hidden rounded-2xl border border-outline-variant/40 bg-surface-container-lowest p-6 text-center shadow-sm lg:col-span-5">
+      <div className="absolute inset-x-0 top-0 h-24 bg-primary/8" />
+      <div className="relative mb-4 flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-surface-container-high shadow-md">
+        {avatarUrl ? (
+          <Image alt={`${nameToDisplay} profile picture`} className="h-full w-full object-cover" src={avatar} width={112} height={112} unoptimized />
+        ) : (
+          <UserRound className="h-10 w-10 text-primary" />
+        )}
       </div>
-      <h2 className="font-headline-md text-headline-md text-on-surface mb-1">{nameToDisplay}</h2>
-      <p className="font-body-md text-body-md text-secondary mb-4">@{firstName.toLowerCase() || 'user'}</p>
-      <div className="mt-auto w-full pt-6 border-t border-surface-variant flex flex-col items-center">
-        <span className="font-label-caps text-label-caps text-tertiary mb-1 uppercase tracking-wider">
-          Date of Birth
-        </span>
-        <span className="font-title-sm text-title-sm text-on-surface">{formattedDate}</span>
+      <h2 className="text-[22px] font-[600] text-on-surface">{nameToDisplay}</h2>
+      <p className="mt-1 text-[14px] text-on-surface-variant">@{firstName.toLowerCase() || 'user'}</p>
+      <div className="mt-6 flex w-full items-center justify-center gap-2 border-t border-outline-variant/40 pt-4 text-[13px] text-on-surface-variant">
+        <CalendarDays className="h-4 w-4 text-primary" />
+        <span>Born {formattedDate}</span>
       </div>
     </div>
   );

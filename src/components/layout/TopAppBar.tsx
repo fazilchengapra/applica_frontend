@@ -2,9 +2,13 @@
 
 import Image from "next/image";
 import { useSidebar } from "./SidebarProvider";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { markAllRead } from "@/store/slices/notificationSlice";
 
 export default function TopAppBar() {
   const { toggleSidebar } = useSidebar();
+  const dispatch = useAppDispatch();
+  const unreadCount = useAppSelector((state) => state.notifications.unreadCount);
 
   return (
     <header className="flex justify-between items-center px-4 lg:px-container-padding w-full h-16 sticky top-0 bg-surface z-40 border-b border-outline-variant">
@@ -36,12 +40,19 @@ export default function TopAppBar() {
           <span className="material-symbols-outlined text-sm">search</span>
         </button>
         
-        <div className="relative cursor-pointer hover:bg-surface-container-low p-2 rounded-full transition-colors">
+        <button
+          type="button"
+          onClick={() => dispatch(markAllRead())}
+          aria-label={`${unreadCount} unread notifications`}
+          className="relative cursor-pointer hover:bg-surface-container-low p-2 rounded-full transition-colors"
+        >
           <span className="material-symbols-outlined text-secondary" data-icon="notifications">
             notifications
           </span>
-          <div className="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border-2 border-surface"></div>
-        </div>
+          {unreadCount > 0 && (
+            <div className="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border-2 border-surface" />
+          )}
+        </button>
         <div className="w-8 h-8 rounded-full bg-surface-container-highest cursor-pointer overflow-hidden border border-outline-variant shrink-0">
           <Image
             src="https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png"

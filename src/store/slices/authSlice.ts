@@ -14,6 +14,7 @@ export interface User {
   is_phone_verified: boolean;
   date_joined: string;
   profile: UserProfile;
+  is_staff: boolean;
 }
 
 interface AuthState {

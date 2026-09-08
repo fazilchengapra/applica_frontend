@@ -1,15 +1,20 @@
+import { AlignLeft } from "lucide-react";
+
 interface ProfileAboutProps {
   bio: string;
 }
 
 export default function ProfileAbout({ bio }: ProfileAboutProps) {
   return (
-    <div className="bg-surface-container-lowest border border-surface-variant rounded-xl p-8 shadow-sm w-full">
-      <div className="flex justify-between items-center mb-6 border-b border-surface-variant pb-4">
-        <h3 className="font-headline-md text-headline-md text-on-surface">About</h3>
-        
+    <div className="w-full rounded-2xl border border-outline-variant/40 bg-surface-container-lowest p-6 shadow-sm">
+      <div className="mb-5 flex items-center justify-between border-b border-outline-variant/40 pb-4">
+        <div>
+          <p className="font-label-caps text-label-caps font-semibold uppercase tracking-[0.14em] text-primary">About you</p>
+          <h3 className="mt-1 text-[20px] font-[600] text-on-surface">Bio</h3>
+        </div>
+        <AlignLeft className="h-5 w-5 text-on-surface-variant" />
       </div>
-      <div className="prose prose-sm max-w-none text-on-surface-variant font-body-md text-body-md leading-relaxed whitespace-pre-wrap">
+      <div className="max-w-3xl whitespace-pre-wrap text-[14px] leading-7 text-on-surface-variant">
         {bio ? (
           <p>{bio}</p>
         ) : (
