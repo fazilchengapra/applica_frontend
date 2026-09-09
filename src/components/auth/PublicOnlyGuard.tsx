@@ -50,7 +50,8 @@ export default function PublicOnlyGuard({ children }: { children: React.ReactNod
     return () => {
       isMounted = false;
     };
-  }, [dispatch, isAuthenticated, isLoading, router, user]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (isLoading || isAuthenticated) {
     return (

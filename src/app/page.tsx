@@ -29,8 +29,7 @@ export default function Home() {
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target.classList.remove("opacity-0", "translate-y-8");
-            entry.target.classList.add("opacity-100", "translate-y-0");
+            entry.target.classList.add("visible");
             animationObserver.unobserve(entry.target);
           }
         });
@@ -119,7 +118,7 @@ export default function Home() {
  </nav>
  <main>
  {/* Hero Section */}
- <section className="animate-on-scroll opacity-0 translate-y-8 transition-all duration-700 ease-out relative pt-[64px] pb-[48px] px-[16px] md:px-[40px] max-w-[1280px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-[48px] items-center overflow-hidden">
+ <section className="animate-on-scroll relative pt-[64px] pb-[48px] px-[16px] md:px-[40px] max-w-[1280px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-[48px] items-center overflow-hidden">
  {/* Decorative bg elements */}
  <div className="absolute top-0 right-0 -z-10 w-3/4 h-3/4 bg-primary-fixed/30 rounded-full blur-3xl opacity-50 transform translate-x-1/3 -translate-y-1/4"></div>
  <div className="flex flex-col gap-[24px] z-10">
@@ -188,7 +187,7 @@ export default function Home() {
  {/* Logos / Social Proof */}
 
  {/* How it Works */}
- <section className="animate-on-scroll opacity-0 translate-y-8 transition-all duration-700 ease-out py-[64px] px-[16px] md:px-[40px] max-w-[1280px] mx-auto" id="how-it-works">
+ <section className="animate-on-scroll py-[64px] px-[16px] md:px-[40px] max-w-[1280px] mx-auto" id="how-it-works">
  <div className="text-center max-w-[672px] mx-auto mb-[48px]">
  <h2 className="text-[36px] leading-[44px] tracking-[-0.02em] font-[700] text-on-surface mb-[8px]">Your fast track to the interview</h2>
  <p className="text-[18px] leading-[28px] font-[400] text-on-surface-variant">Applica streamlines the entire application process in four simple steps.</p>
@@ -239,7 +238,7 @@ export default function Home() {
  </div>
  </section>
  {/* Features (Bento Grid) */}
- <section className="animate-on-scroll opacity-0 translate-y-8 transition-all duration-700 ease-out py-[64px] px-[16px] md:px-[40px] max-w-[1280px] mx-auto bg-surface-container-low rounded-3xl mb-[48px]" id="features">
+ <section className="animate-on-scroll py-[64px] px-[16px] md:px-[40px] max-w-[1280px] mx-auto bg-surface-container-low rounded-3xl mb-[48px]" id="features">
  <div className="text-center max-w-[672px] mx-auto mb-[48px]">
  <h2 className="text-[36px] leading-[44px] tracking-[-0.02em] font-[700] text-on-surface mb-[8px]">Tools to elevate your application</h2>
  <p className="text-[18px] leading-[28px] font-[400] text-on-surface-variant">Everything you need to stand out in a crowded job market, powered by advanced AI.</p>
@@ -302,7 +301,7 @@ export default function Home() {
  </div>
  </section>
  {/* Pricing Section */}
- <section className="animate-on-scroll opacity-0 translate-y-8 transition-all duration-700 ease-out py-[64px] px-[16px] md:px-[40px] max-w-[1280px] mx-auto" id="pricing">
+ <section className="animate-on-scroll py-[64px] px-[16px] md:px-[40px] max-w-[1280px] mx-auto" id="pricing">
  <div className="text-center max-w-[672px] mx-auto mb-[48px]">
  <h2 className="text-[36px] leading-[44px] tracking-[-0.02em] font-[700] text-on-surface mb-[8px]">Simple, transparent pricing</h2>
  <p className="text-[18px] leading-[28px] font-[400] text-on-surface-variant">Invest in your career with a plan that fits your job search velocity.</p>
@@ -380,7 +379,7 @@ export default function Home() {
  </div>
  </section>
  {/* CTA Banner */}
- <section className="animate-on-scroll opacity-0 translate-y-8 transition-all duration-700 ease-out py-[64px] px-[16px] md:px-[40px]">
+ <section className="animate-on-scroll py-[64px] px-[16px] md:px-[40px]">
  <div className="max-w-[1280px] mx-auto bg-primary rounded-2xl p-[32px] md:p-[64px] flex flex-col md:flex-row items-center justify-between gap-[32px] relative overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
  {/* abstract graphic */}
  <div className="absolute right-0 top-0 w-64 h-64 bg-primary-container rounded-full blur-3xl opacity-50 transform translate-x-1/2 -translate-y-1/2"></div>
