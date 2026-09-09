@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Activity,
   Bell,
@@ -17,6 +17,34 @@ import {
   TriangleAlert,
   X,
 } from "lucide-react";
+import api from "@/lib/axios";
+
+interface OverviewResponse {
+  id: number;
+  contact: {
+    email: string;
+    phone_number: string | null;
+  };
+  account: {
+    status: string;
+    is_active: boolean;
+    is_deactivated: boolean;
+    deactivated_at: string | null;
+  };
+  permissions: {
+    is_staff: boolean;
+    is_superuser: boolean;
+  };
+  verification: {
+    email_verified: boolean;
+    phone_verified: boolean;
+  };
+  timestamps: {
+    joined_at: string | null;
+    last_login: string | null;
+    last_updated: string | null;
+  };
+}
 
 interface AuthMethod {
   provider: string;
@@ -199,6 +227,15 @@ const tabs = [
   { label: "Notifications", icon: Bell },
   { label: "Activity", icon: Activity },
 ];
+
+const TAB_ENDPOINTS: Record<string, string> = {
+  Overview: "overview",
+  Profile: "profile",
+  "Authentication & Security": "authentication",
+  CVs: "cvs",
+  Notifications: "notifications",
+  Activity: "activity",
+};
 
 function formatDate(value?: string | null): string {
   if (!value) return "—";
@@ -737,6 +774,25 @@ function ActivityContent({ user }: { user: NonNullable<UserDetailsModalProps["us
 
 export default function UserDetailsModal({ user, onClose }: UserDetailsModalProps) {
   const [activeTab, setActiveTab] = useState("Overview");
+  const [tabData, setTabData] = useState<Record<string, unknown>>({});
+  const [loadingTab, setLoadingTab] = useState<string | null>("Overview");
+  const [tabError, setTabError] = useState<string | null>(null);
+
+  const fetchTabData = useCallback(async (tab: string) => {
+    if (!user || tabData[tab]) return;
+
+    setLoadingTab(tab);
+    setTabError(null);
+
+    try {
+      const response = await api.get(`v1/users/admin/${user.id}/${TAB_ENDPOINTS[tab]}/`);
+      setTabData((current) => ({ ...current, [tab]: response.data }));
+    } catch {
+      setTabError(`Unable to load ${tab.toLowerCase()} data right now.`);
+    } finally {
+      setLoadingTab(null);
+    }
+  }, [tabData, user]);
 
   useEffect(() => {
     if (!user) return;
@@ -754,9 +810,39 @@ export default function UserDetailsModal({ user, onClose }: UserDetailsModalProp
     };
   }, [onClose, user]);
 
+  useEffect(() => {
+    if (user) void Promise.resolve().then(() => fetchTabData("Overview"));
+  }, [fetchTabData, user]);
+
   if (!user) return null;
 
   const initials = user.username.slice(0, 2).toUpperCase();
+  const overviewData = tabData.Overview as OverviewResponse | undefined;
+  const activeTabData = tabData[activeTab];
+  const displayUser = overviewData
+    ? {
+        ...user,
+        email: overviewData.contact.email,
+        phone_number: overviewData.contact.phone_number,
+        is_active: overviewData.account.is_active,
+        is_staff: overviewData.permissions.is_staff,
+        is_superuser: overviewData.permissions.is_superuser,
+        email_verified: overviewData.verification.email_verified,
+        phone_verified: overviewData.verification.phone_verified,
+        date_joined: overviewData.timestamps.joined_at,
+        last_login: overviewData.timestamps.last_login,
+        updated_at: overviewData.timestamps.last_updated,
+        deactivated_at: overviewData.account.deactivated_at,
+      }
+    : user;
+  const contentUser = activeTabData && typeof activeTabData === "object"
+    ? { ...displayUser, ...(activeTabData as Partial<typeof displayUser>) }
+    : displayUser;
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    void fetchTabData(tab);
+  };
 
   return (
     <div
@@ -813,7 +899,7 @@ export default function UserDetailsModal({ user, onClose }: UserDetailsModalProp
                     key={label}
                     type="button"
                     aria-current={isActive ? "page" : undefined}
-                    onClick={() => setActiveTab(label)}
+                    onClick={() => handleTabChange(label)}
                     className={`flex min-w-max items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-semibold transition-colors md:w-full ${isActive ? "bg-primary text-on-primary shadow-sm" : "text-secondary hover:bg-surface-container hover:text-on-background"}`}
                   >
                     <Icon className="h-4 w-4 shrink-0" />
@@ -825,6 +911,16 @@ export default function UserDetailsModal({ user, onClose }: UserDetailsModalProp
           </nav>
 
           <div className="min-h-[280px] flex-1 overflow-y-auto p-5 sm:p-7">
+            {loadingTab === activeTab && !tabData[activeTab] ? (
+              <div className="flex min-h-[420px] items-center justify-center">
+                <div className="flex flex-col items-center gap-3 text-center">
+                  <div className="h-9 w-9 animate-spin rounded-full border-2 border-primary/20 border-t-primary" />
+                  <p className="text-sm font-semibold text-on-background">Loading {activeTab.toLowerCase()}...</p>
+                  <p className="text-xs text-secondary">Fetching the latest user details.</p>
+                </div>
+              </div>
+            ) : (
+              <>
             <div className="mb-7">
               <p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">{activeTab}</p>
               <h3 className="mt-2 text-2xl font-bold tracking-tight text-on-background">{activeTab}</h3>
@@ -835,7 +931,13 @@ export default function UserDetailsModal({ user, onClose }: UserDetailsModalProp
               </p>
             </div>
 
-            {activeTab === "Overview" ? <OverviewContent user={user} /> : activeTab === "Profile" ? <ProfileContent user={user} /> : activeTab === "Authentication & Security" ? <AuthenticationContent user={user} /> : activeTab === "CVs" ? <CvsContent user={user} /> : activeTab === "Notifications" ? <NotificationsContent user={user} /> : activeTab === "Activity" ? <ActivityContent user={user} /> : (
+            {tabError && (
+              <div className="mb-5 rounded-lg border border-error/20 bg-error/5 px-4 py-3 text-sm text-error">
+                {tabError}
+              </div>
+            )}
+
+            {activeTab === "Overview" ? <OverviewContent user={contentUser} /> : activeTab === "Profile" ? <ProfileContent user={contentUser} /> : activeTab === "Authentication & Security" ? <AuthenticationContent user={contentUser} /> : activeTab === "CVs" ? <CvsContent user={contentUser} /> : activeTab === "Notifications" ? <NotificationsContent user={contentUser} /> : activeTab === "Activity" ? <ActivityContent user={contentUser} /> : (
               <div className="flex min-h-52 items-center justify-center rounded-xl border border-dashed border-outline-variant bg-surface-container-low px-6 py-10 text-center">
                 <div>
                   <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-surface-container text-secondary">
@@ -845,6 +947,8 @@ export default function UserDetailsModal({ user, onClose }: UserDetailsModalProp
                   <p className="mt-1 text-xs text-secondary">This section is set up for the next step.</p>
                 </div>
               </div>
+            )}
+              </>
             )}
           </div>
         </div>
