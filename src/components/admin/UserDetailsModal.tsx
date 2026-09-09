@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import api from "@/lib/axios";
+import { toast } from "sonner";
 
 interface OverviewResponse {
   id: number;
@@ -46,6 +47,51 @@ interface OverviewResponse {
   };
 }
 
+interface ProfileResponse {
+  name: {
+    first_name: string | null;
+    last_name: string | null;
+    display_name: string | null;
+  };
+  profile: {
+    avatar_url: string | null;
+    bio: string | null;
+  };
+  personal: {
+    date_of_birth: string | null;
+    gender: string | null;
+  };
+  location: {
+    country: string | null;
+    city: string | null;
+    timezone: string | null;
+  };
+  locale: string | null;
+}
+
+interface VerificationHistoryPage {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: VerificationToken[];
+}
+
+interface AuthenticationResponse {
+  authentication_methods: Array<{
+    provider: string;
+    provider_email: string | null;
+    verification: {
+      is_verified: boolean;
+    };
+    status: {
+      is_active: boolean;
+    };
+    linked_at: string | null;
+    last_used_at: string | null;
+  }>;
+  verification_history?: VerificationHistoryPage | VerificationToken[];
+}
+
 interface AuthMethod {
   provider: string;
   provider_email?: string | null;
@@ -64,6 +110,23 @@ interface VerificationToken {
   status: "used" | "active" | "expired" | "revoked";
   created_at: string;
   expires_at: string;
+}
+
+function normalizeVerificationHistory(
+  payload: AuthenticationResponse | VerificationHistoryPage | VerificationToken[],
+): VerificationHistoryPage {
+  const history = "verification_history" in payload ? payload.verification_history : payload;
+
+  if (Array.isArray(history)) {
+    return {
+      count: history.length,
+      next: null,
+      previous: null,
+      results: history,
+    };
+  }
+
+  return history ?? { count: 0, next: null, previous: null, results: [] };
 }
 
 interface MasterCv {
@@ -98,45 +161,6 @@ interface ActivitySummary {
   notifications_count: number;
   unread_notifications_count: number;
 }
-
-const DEMO_AUTH_METHODS: AuthMethod[] = [
-  {
-    provider: "Email",
-    provider_email: "john@example.com",
-    verification_status: true,
-    active_status: "Active",
-    last_used: "2026-09-09",
-  },
-  {
-    provider: "Google",
-    provider_email: "john@gmail.com",
-    verification_status: true,
-    active_status: "Active",
-    linked_date: "2026-09-01",
-    last_used: "2026-09-08",
-  },
-];
-
-const DEMO_VERIFICATION_TOKENS: VerificationToken[] = [
-  {
-    type: "Email Verification",
-    status: "used",
-    created_at: "2026-09-01",
-    expires_at: "2026-09-01",
-  },
-  {
-    type: "Password Reset",
-    status: "expired",
-    created_at: "2026-09-05",
-    expires_at: "2026-09-05",
-  },
-  {
-    type: "Magic Link",
-    status: "active",
-    created_at: "2026-09-09",
-    expires_at: "2026-09-09",
-  },
-];
 
 const DEMO_MASTER_CV: MasterCv = {
   id: 1,
@@ -230,8 +254,6 @@ const tabs = [
 
 const TAB_ENDPOINTS: Record<string, string> = {
   Overview: "overview",
-  Profile: "profile",
-  "Authentication & Security": "authentication",
   CVs: "cvs",
   Notifications: "notifications",
   Activity: "activity",
@@ -582,7 +604,7 @@ function NotificationsContent({ user }: { user: NonNullable<UserDetailsModalProp
         <p className="mt-1 text-xs text-secondary">Notifications sent to this user.</p>
       </div>
       <div className="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-low">
-        <div className="hidden grid-cols-[minmax(0,1fr)_minmax(150px,0.9fr)_100px_130px] gap-4 border-b border-outline-variant px-5 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-secondary sm:grid">
+        <div className="hidden grid-cols-[minmax(0,1fr)_minmax(150px,0.9fr)_100px_130px] gap-4 border-b border-outline-variant px-5 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-secondary md:grid">
           <span>Type / Title</span>
           <span>Status</span>
           <span>Created</span>
@@ -594,11 +616,11 @@ function NotificationsContent({ user }: { user: NonNullable<UserDetailsModalProp
               key={notification.id}
               type="button"
               onClick={() => handleSelectNotification(notification)}
-              className="grid w-full grid-cols-1 gap-3 border-b border-outline-variant px-4 py-4 text-left last:border-b-0 hover:bg-surface-container sm:grid-cols-[minmax(0,1fr)_minmax(150px,0.9fr)_100px_130px] sm:items-center sm:gap-4 sm:px-5"
+              className="grid w-full grid-cols-1 gap-3 border-b border-outline-variant px-4 py-4 text-left last:border-b-0 hover:bg-surface-container md:grid-cols-[minmax(0,1fr)_minmax(150px,0.9fr)_100px_130px] md:items-center md:gap-4 md:px-5"
             >
               <span className="min-w-0">
                 <span className="block truncate text-sm font-semibold text-on-background">{notification.title}</span>
-                <span className="mt-1 block truncate font-mono text-[11px] text-secondary">{notification.type}</span>
+                <span className="mt-1 block break-words font-mono text-[11px] text-secondary">{notification.type}</span>
               </span>
               <span className={`w-fit rounded-full px-2.5 py-1 text-xs font-semibold ${notification.status === "Unread" ? "bg-primary/10 text-primary" : "bg-emerald-50 text-emerald-700"}`}>
                 {notification.status}
@@ -613,11 +635,52 @@ function NotificationsContent({ user }: { user: NonNullable<UserDetailsModalProp
   );
 }
 
-function AuthenticationContent({ user }: { user: NonNullable<UserDetailsModalProps["user"]> }) {
-  const authMethods = user.auth_methods?.length ? user.auth_methods : DEMO_AUTH_METHODS;
-  const verificationTokens = user.verification_tokens?.length
-    ? user.verification_tokens
-    : DEMO_VERIFICATION_TOKENS;
+function AuthenticationContent({
+  user,
+  authenticationData,
+}: {
+  user: NonNullable<UserDetailsModalProps["user"]>;
+  authenticationData?: AuthenticationResponse;
+}) {
+  const authMethods = user.auth_methods ?? [];
+  const apiHistory = authenticationData ? normalizeVerificationHistory(authenticationData) : null;
+  const initialHistory = apiHistory?.results ?? user.verification_tokens ?? [];
+  const initialCount = apiHistory?.count ?? initialHistory.length;
+  const [verificationTokens, setVerificationTokens] = useState(initialHistory);
+  const [verificationCount, setVerificationCount] = useState(initialCount);
+  const [verificationStatus, setVerificationStatus] = useState("");
+  const [verificationPage, setVerificationPage] = useState(1);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  const fetchVerificationHistory = async (status: string, page: number) => {
+    setHistoryLoading(true);
+    try {
+      const params = new URLSearchParams({ page: String(page), page_size: "20" });
+      if (status) params.set("status", status);
+      const response = await api.get<AuthenticationResponse | VerificationHistoryPage | VerificationToken[]>(
+        `v1/auth/admin/${user.id}/?${params.toString()}`,
+      );
+      const history = normalizeVerificationHistory(response.data);
+      setVerificationTokens(history.results);
+      setVerificationCount(history.count);
+      setVerificationPage(page);
+    } catch {
+      toast.error("Unable to load verification events", {
+        description: "Please try again in a moment.",
+      });
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const handleVerificationStatusChange = (status: string) => {
+    setVerificationStatus(status);
+    void fetchVerificationHistory(status, 1);
+  };
+
+  const handleVerificationPageChange = (page: number) => {
+    void fetchVerificationHistory(verificationStatus, page);
+  };
 
   return (
     <div>
@@ -694,14 +757,30 @@ function AuthenticationContent({ user }: { user: NonNullable<UserDetailsModalPro
           </div>
           <ShieldCheck className="h-5 w-5 text-primary" />
         </div>
+        <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <label className="flex items-center gap-2 text-xs font-semibold text-secondary">
+            Status
+            <select
+              value={verificationStatus}
+              onChange={(event) => handleVerificationStatusChange(event.target.value)}
+              className="rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2 text-xs font-medium text-on-background focus:border-primary focus:outline-none"
+            >
+              <option value="">All statuses</option>
+              <option value="used">Used</option>
+              <option value="expired">Expired</option>
+              <option value="revoked">Revoked</option>
+            </select>
+          </label>
+          <span className="text-xs text-secondary">{verificationCount} event{verificationCount === 1 ? "" : "s"}</span>
+        </div>
         <div className="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-low">
-          <div className="hidden grid-cols-[minmax(0,1.5fr)_minmax(110px,0.8fr)_minmax(120px,1fr)_minmax(120px,1fr)] gap-4 border-b border-outline-variant px-4 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-secondary sm:grid sm:px-5">
+          <div className="hidden grid-cols-[minmax(0,1.5fr)_minmax(110px,0.8fr)_minmax(120px,1fr)_minmax(120px,1fr)] gap-4 border-b border-outline-variant px-4 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-secondary lg:grid lg:px-5">
             <span>Type</span>
             <span>Status</span>
             <span>Created</span>
             <span>Expires</span>
           </div>
-          <div className="divide-y divide-outline-variant">
+          <div className={`divide-y divide-outline-variant ${historyLoading ? "opacity-50" : ""}`}>
             {verificationTokens.map((token) => {
               const status = {
                 used: { label: "Used", icon: CheckCircle2, className: "text-emerald-700 bg-emerald-50" },
@@ -712,20 +791,44 @@ function AuthenticationContent({ user }: { user: NonNullable<UserDetailsModalPro
               const StatusIcon = status.icon;
 
               return (
-                <div key={`${token.type}-${token.created_at}`} className="grid grid-cols-1 gap-3 px-4 py-4 sm:grid-cols-[minmax(0,1.5fr)_minmax(110px,0.8fr)_minmax(120px,1fr)_minmax(120px,1fr)] sm:items-center sm:gap-4 sm:px-5">
+                <div key={`${token.type}-${token.created_at}`} className="grid grid-cols-1 gap-3 px-4 py-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(110px,0.8fr)_minmax(120px,1fr)_minmax(120px,1fr)] lg:items-center lg:gap-4 lg:px-5">
                   <div>
                     <p className="text-sm font-semibold text-on-background">{token.type}</p>
-                    <p className="mt-1 text-[11px] text-secondary sm:hidden">Created {formatShortDate(token.created_at)} · Expires {formatShortDate(token.expires_at)}</p>
+                    <p className="mt-1 text-[11px] text-secondary lg:hidden">Created {formatShortDate(token.created_at)} · Expires {formatShortDate(token.expires_at)}</p>
                   </div>
                   <span className={`inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${status.className}`}>
                     <StatusIcon className="h-3.5 w-3.5" />
                     {status.label}
                   </span>
-                  <span className="hidden text-sm text-secondary sm:block">{formatShortDate(token.created_at)}</span>
-                  <span className="hidden text-sm text-secondary sm:block">{formatShortDate(token.expires_at)}</span>
+                  <span className="hidden text-sm text-secondary lg:block">{formatShortDate(token.created_at)}</span>
+                  <span className="hidden text-sm text-secondary lg:block">{formatShortDate(token.expires_at)}</span>
                 </div>
               );
             })}
+            {verificationTokens.length === 0 && (
+              <p className="px-5 py-8 text-center text-sm text-secondary">No verification events found.</p>
+            )}
+          </div>
+          <div className="flex items-center justify-between border-t border-outline-variant px-4 py-3 sm:px-5">
+            <span className="text-xs text-secondary">Page {verificationPage}</span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={verificationPage === 1 || historyLoading}
+                onClick={() => handleVerificationPageChange(verificationPage - 1)}
+                className="rounded-md border border-outline-variant px-3 py-1.5 text-xs font-semibold text-secondary hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                disabled={verificationPage * 20 >= verificationCount || historyLoading}
+                onClick={() => handleVerificationPageChange(verificationPage + 1)}
+                className="rounded-md border border-outline-variant px-3 py-1.5 text-xs font-semibold text-secondary hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Next
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -785,7 +888,12 @@ export default function UserDetailsModal({ user, onClose }: UserDetailsModalProp
     setTabError(null);
 
     try {
-      const response = await api.get(`v1/users/admin/${user.id}/${TAB_ENDPOINTS[tab]}/`);
+      const endpoint = tab === "Profile"
+        ? `v1/profiles/admin/${user.id}/`
+        : tab === "Authentication & Security"
+          ? `v1/auth/admin/${user.id}/?page=1&page_size=20`
+        : `v1/users/admin/${user.id}/${TAB_ENDPOINTS[tab]}/`;
+      const response = await api.get(endpoint);
       setTabData((current) => ({ ...current, [tab]: response.data }));
     } catch {
       setTabError(`Unable to load ${tab.toLowerCase()} data right now.`);
@@ -818,6 +926,8 @@ export default function UserDetailsModal({ user, onClose }: UserDetailsModalProp
 
   const initials = user.username.slice(0, 2).toUpperCase();
   const overviewData = tabData.Overview as OverviewResponse | undefined;
+  const profileData = tabData.Profile as ProfileResponse | undefined;
+  const authenticationData = tabData["Authentication & Security"] as AuthenticationResponse | undefined;
   const activeTabData = tabData[activeTab];
   const displayUser = overviewData
     ? {
@@ -835,9 +945,45 @@ export default function UserDetailsModal({ user, onClose }: UserDetailsModalProp
         deactivated_at: overviewData.account.deactivated_at,
       }
     : user;
-  const contentUser = activeTabData && typeof activeTabData === "object"
-    ? { ...displayUser, ...(activeTabData as Partial<typeof displayUser>) }
+  const profileUser = profileData
+    ? {
+        ...displayUser,
+        first_name: profileData.name.first_name,
+        last_name: profileData.name.last_name,
+        display_name: profileData.name.display_name,
+        avatar_url: profileData.profile.avatar_url,
+        bio: profileData.profile.bio,
+        date_of_birth: profileData.personal.date_of_birth,
+        gender: profileData.personal.gender,
+        country: profileData.location.country,
+        city: profileData.location.city,
+        timezone: profileData.location.timezone,
+        locale: profileData.locale,
+      }
     : displayUser;
+  const authenticationUser = authenticationData
+    ? {
+        ...displayUser,
+        auth_methods: authenticationData.authentication_methods.map((method) => ({
+          provider: method.provider,
+          provider_email: method.provider_email,
+          is_verified: method.verification.is_verified,
+          is_active: method.status.is_active,
+          linked_at: method.linked_at,
+          last_used_at: method.last_used_at,
+        })),
+        verification_tokens: Array.isArray(authenticationData.verification_history)
+          ? authenticationData.verification_history
+          : authenticationData.verification_history?.results ?? [],
+      }
+    : displayUser;
+  const contentUser = activeTab === "Profile"
+    ? profileUser
+    : activeTab === "Authentication & Security"
+      ? authenticationUser
+    : activeTabData && typeof activeTabData === "object"
+      ? { ...displayUser, ...(activeTabData as Partial<typeof displayUser>) }
+      : displayUser;
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
@@ -937,7 +1083,7 @@ export default function UserDetailsModal({ user, onClose }: UserDetailsModalProp
               </div>
             )}
 
-            {activeTab === "Overview" ? <OverviewContent user={contentUser} /> : activeTab === "Profile" ? <ProfileContent user={contentUser} /> : activeTab === "Authentication & Security" ? <AuthenticationContent user={contentUser} /> : activeTab === "CVs" ? <CvsContent user={contentUser} /> : activeTab === "Notifications" ? <NotificationsContent user={contentUser} /> : activeTab === "Activity" ? <ActivityContent user={contentUser} /> : (
+            {activeTab === "Overview" ? <OverviewContent user={contentUser} /> : activeTab === "Profile" ? <ProfileContent user={contentUser} /> : activeTab === "Authentication & Security" ? <AuthenticationContent user={contentUser} authenticationData={authenticationData} /> : activeTab === "CVs" ? <CvsContent user={contentUser} /> : activeTab === "Notifications" ? <NotificationsContent user={contentUser} /> : activeTab === "Activity" ? <ActivityContent user={contentUser} /> : (
               <div className="flex min-h-52 items-center justify-center rounded-xl border border-dashed border-outline-variant bg-surface-container-low px-6 py-10 text-center">
                 <div>
                   <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-surface-container text-secondary">
