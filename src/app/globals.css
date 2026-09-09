@@ -290,30 +290,6 @@ input[type=number] {
   animation: modal-zoom-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Scroll-triggered fade-in animation — progressive enhancement.
-   Content is visible by default. When JS adds .visible, a smooth
-   keyframe plays. This ensures content is never hidden if the
-   IntersectionObserver is slow or unavailable (SSR, hydration delay). */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(2rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Sections start visible. JS marks them for animation. */
-.animate-on-scroll {
-  /* intentionally no opacity:0 — always visible without JS */
-}
-
-.animate-on-scroll.visible {
-  animation: fadeInUp 0.7s ease-out both;
-}
-
 .landing-page-theme {
   --color-surface-variant: #dae2fd;
   --color-inverse-primary: #abc7ff;
